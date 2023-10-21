@@ -21,7 +21,7 @@ const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 
 // camera
-Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
+Camera camera(glm::vec3(0.0f, 0.0f, 10.0f));
 float lastX = SCR_WIDTH / 2.0f;
 float lastY = SCR_HEIGHT / 2.0f;
 bool firstMouse = true;
@@ -77,11 +77,10 @@ int main()
 
     // build and compile shaders
     // -------------------------
-    Shader ourShader(std::string("vertex_core.glsl").c_str(), std::string("fragment_core.glsl").c_str());
+    Shader ourShader("source/shader/vertex_core.glsl", "source/shader/fragment_core.glsl");
 
     // load models
-    // -----------
-    Model ourModel(std::string("resources/backpack/backpack.obj"));
+    Model ourModel(std::string("source/resources/backpack/backpack.obj"));
 
     
     // draw in wireframe

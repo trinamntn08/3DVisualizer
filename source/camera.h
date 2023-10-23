@@ -4,7 +4,7 @@
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-
+#include <glfw3.h>
 #include <vector>
 
 // Defines several possible options for camera movement. Used as abstraction to stay away from window-system specific input methods
@@ -51,6 +51,8 @@ public:
 
     // processes input received from any keyboard-like input system. 
     void ProcessKeyboard(Camera_Movement direction, float deltaTime);
+
+    void ProcessKeyboard(GLFWwindow* window, float deltaTime);
 
     // processes input received from a mouse input system. 
     // Expects the offset value in both the x and y direction.

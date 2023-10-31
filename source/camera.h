@@ -1,11 +1,14 @@
 #ifndef CAMERA_H
 #define CAMERA_H
 
-#include <glad/glad.h>
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glfw3.h>
-#include <vector>
+#include<glad/glad.h>
+#include<glm/glm.hpp>
+#include<glm/gtc/matrix_transform.hpp>
+#include<glm/gtc/type_ptr.hpp>
+#include<glm/gtx/rotate_vector.hpp>
+#include<glm/gtx/vector_angle.hpp>
+#include<glfw3.h>
+#include<vector>
 
 // Defines several possible options for camera movement. Used as abstraction to stay away from window-system specific input methods
 enum Camera_Movement {
@@ -18,51 +21,50 @@ enum Camera_Movement {
 // Default camera values
 const float YAW         = -90.0f;
 const float PITCH       =  0.0f;
-const float SPEED       =  2.5f;
-const float SENSITIVITY =  0.2f;
-const float ZOOM        =  80.0f;
+const float SPEED       =  20.0f;
+const float SENSITIVITY =  200.0f;
+const float ZOOM        =  45.0f;
 
-
-// An abstract camera class that processes input and calculates the corresponding Euler Angles, Vectors and Matrices for use in OpenGL
 class Camera
 {
 public:
-    // camera Attributes
-    glm::vec3 Position;
-    glm::vec3 Front;
-    glm::vec3 Up;
-    glm::vec3 Right;
-    glm::vec3 WorldUp;
-    // euler Angles
-    float Yaw;
-    float Pitch;
-    // camera options
-    float MovementSpeed;
-    float MouseSensitivity;
-    float Zoom;
+	Camera(float verticalFOV, float nearClip, float farClip);
 
-    // constructor with vectors
-    Camera(glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f), float yaw = YAW, float pitch = PITCH);
-    // constructor with scalar values
-    Camera(float posX, float posY, float posZ, float upX, float upY, float upZ, float yaw, float pitch);
+	bool OnUpdate(GLFWwindow* window, float deltaTime =0.01);
+	void OnResize(uint32_t width, uint32_t height);
 
-    // returns the view matrix calculated using Euler Angles and the LookAt Matrix
-    glm::mat4 GetViewMatrix();
+	const glm::mat4& GetProjectionMatrix() const { return m_Projection; }
+	const glm::mat4& GetInverseProjectionMatrix() const { return m_InverseProjection; }
+	const glm::mat4& GetViewMatrix() const { return m_View; }
+	const glm::mat4& GetInverseViewMatrix() const { return m_InverseView; }
 
-    // processes input received from any keyboard-like input system. 
-    void ProcessKeyboard(Camera_Movement direction, float deltaTime);
+	const glm::vec3& GetPosition() const { return m_Position; }
+	const glm::vec3& GetDirection() const { return m_ForwardDirection; }
 
-    void ProcessKeyboard(GLFWwindow* window, float deltaTime);
-
-    // processes input received from a mouse input system. 
-    // Expects the offset value in both the x and y direction.
-    void ProcessMouseMovement(float xoffset, float yoffset, GLboolean constrainPitch = true);
-
-    // processes input received from a mouse scroll-wheel event. Only requires input on the vertical wheel-axis
-    void ProcessMouseScroll(float yoffset);
+	float GetRotationSpeed();
+	void ProcessMouseScroll(float yOffSet);
+private:
+	void RecalculateProjection();
+	void RecalculateView();
 
 private:
-    // calculates the front vector from the Camera's (updated) Euler Angles
-    void updateCameraVectors();
+	glm::mat4 m_Projection{ 1.0f };
+	glm::mat4 m_View{ 1.0f };
+	glm::mat4 m_InverseProjection{ 1.0f };
+	glm::mat4 m_InverseView{ 1.0f };
+
+	float m_VerticalFOV = 45.0f;
+	float m_NearClip = 0.1f;
+	float m_FarClip = 100.0f;
+
+	glm::vec3 m_Position{ 0.0f, 0.0f, 0.0f };
+	glm::vec3 m_ForwardDirection{ 0.0f, 0.0f, 0.0f };
+
+
+	glm::vec2 m_LastMousePosition{ 0.0f, 0.0f };
+	bool firstClick = true;
+
+	int m_ViewportWidth = 800, m_ViewportHeight = 600;
 };
+
 #endif

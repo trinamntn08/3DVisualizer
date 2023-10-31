@@ -35,7 +35,8 @@ public:
     Model(string const& path, bool gamma = false);
 
     // draws the model, and thus all its meshes
-    void Draw(Shader& shader);
+    void Render(Shader& shader);
+    void Rotate(Shader& shader, float angle, const glm::vec3& axis);
     
 private:
     // loads a model with supported ASSIMP extensions from file and stores the resulting meshes in the meshes vector.

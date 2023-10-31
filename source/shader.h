@@ -79,6 +79,13 @@ public:
     {
         glUniformMatrix4fv(glGetUniformLocation(ID, name.c_str()), 1, GL_FALSE, &mat[0][0]);
     }
+    // ------------------------------------------------------------------------
+    void setMat_MVP(const glm::mat4& model, const glm::mat4& view, const glm::mat4& project ) const
+    {
+        glUniformMatrix4fv(glGetUniformLocation(ID, "model"), 1, GL_FALSE, &model[0][0]);
+        glUniformMatrix4fv(glGetUniformLocation(ID, "view"), 1, GL_FALSE, &view[0][0]);
+        glUniformMatrix4fv(glGetUniformLocation(ID, "projection"), 1, GL_FALSE, &project[0][0]);
+    }
 
 private:
     // utility function for checking shader compilation/linking errors.

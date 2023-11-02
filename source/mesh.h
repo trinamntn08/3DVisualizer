@@ -35,13 +35,13 @@ struct Texture {
 class Mesh {
 public:
     // mesh Data
-    vector<Vertex>       vertices;
-    vector<unsigned int> indices;
-    vector<Texture>      textures;
+    std::vector<Vertex>       vertices;
+    std::vector<unsigned int> indices;
+    std::vector<Texture>      textures;
     unsigned int VAO;
 
-    Mesh(vector<Vertex> vertices, vector<unsigned int> indices, vector<Texture> textures);
-
+    Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<Texture> textures);
+    ~Mesh();
     // render the mesh
     void Render(Shader& shader);
 private:

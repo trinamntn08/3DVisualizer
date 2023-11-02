@@ -4,20 +4,29 @@ Camera::Camera(float verticalFOV, float nearClip, float farClip)
 	: m_VerticalFOV(verticalFOV), m_NearClip(nearClip), m_FarClip(farClip)
 {
 	m_ForwardDirection = glm::vec3(0, 0, -1);
-	m_Position = glm::vec3(0, 0, 6);
+	m_Position = glm::vec3(0, 0, 10);
 	RecalculateProjection();
 	RecalculateView();
 }
-
+void Camera::OnResize(int viewport_Width, int viewport_Height)
+{ 
+	if (m_ViewportWidth != viewport_Width || m_ViewportHeight != viewport_Height)
+	{
+		m_ViewportWidth = viewport_Width;
+		m_ViewportHeight = viewport_Height;
+		RecalculateProjection();
+	}
+}
 bool Camera::OnUpdate(GLFWwindow* window,float deltaTime)
 {
-	glfwGetFramebufferSize(window, &m_ViewportWidth, &m_ViewportHeight);
-	
+	int viewport_Width, viewport_Height;
+	glfwGetFramebufferSize(window, &viewport_Width, &viewport_Height);
+	OnResize(viewport_Width, viewport_Height);
 	bool moved = false;
 	constexpr glm::vec3 upDirection(0.0f, 1.0f, 0.0f);
 	glm::vec3 rightDirection = glm::cross(m_ForwardDirection, upDirection);
 
-	float speed = 5.f;
+	float speed = 10.f;
 	float velocity = speed * deltaTime;
 	//Mouse
 	if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
@@ -109,17 +118,6 @@ bool Camera::OnUpdate(GLFWwindow* window,float deltaTime)
 	return moved;
 }
 
-void Camera::OnResize(uint32_t width, uint32_t height)
-{
-	if (width == m_ViewportWidth && height == m_ViewportHeight)
-		return;
-
-	m_ViewportWidth = width;
-	m_ViewportHeight = height;
-
-	RecalculateProjection();
-}
-
 float Camera::GetRotationSpeed()
 {
 	return 0.3f;
@@ -146,4 +144,18 @@ void Camera::ProcessMouseScroll(float yOffSet)
 	if (m_VerticalFOV > 90.0f)
 		m_VerticalFOV = 90.0f;
 	RecalculateProjection();
+}
+
+void Camera::LookAtBoundingBox(const BoundingBox& boundingBox) 
+{
+	// Calculate camera position and target to fit the bounding box
+	glm::vec3 boundingBoxCenter = boundingBox.GetCenter();
+	float boundingBoxRadius = boundingBox.GetBoundingBoxRadius();
+
+	// Raise the camera position along the y-axis to view the object from above
+//	m_Position = boundingBoxCenter + glm::vec3(0.0f, 0.0f, 2.0f * boundingBoxRadius);
+	m_Position = boundingBoxCenter + glm::vec3(0.0f, 20.0f, 1.5* boundingBoxRadius);
+	m_ForwardDirection = glm::normalize(boundingBoxCenter - m_Position);
+
+	RecalculateView();
 }

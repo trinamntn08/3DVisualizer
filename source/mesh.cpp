@@ -10,7 +10,14 @@ Mesh::Mesh(vector<Vertex> vertices, vector<unsigned int> indices, vector<Texture
     // now that we have all the required data, set the vertex buffers and its attribute pointers.
     setupMesh();
 }
+Mesh::~Mesh() {
+   //  Delete the vertex and index buffers
+    //glDeleteBuffers(1, &VBO);
+    //glDeleteBuffers(1, &EBO);
 
+    //// Delete the vertex array object
+    //glDeleteVertexArrays(1, &VAO);
+}
 void Mesh::Render(Shader& shader)
 {
     // bind appropriate textures

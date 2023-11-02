@@ -29,15 +29,22 @@ public:
     std::vector<Texture> textures_loaded;	// stores all the textures loaded so far, optimization to make sure textures aren't loaded more than once.
     std::vector<Mesh>    meshes;
     string directory;
+    glm::vec3 m_position= glm::vec3(0.0f);
     bool gammaCorrection;
 
     // constructor, expects a filepath to a 3D model.
-    Model(string const& path, bool gamma = false);
+    Model(string const& path, const glm::vec3 &pos = glm::vec3(0.0f), bool gamma = false);
+    // Copy constructor
+    Model(const Model& other);
+    // Copy assignment operator
+    Model& operator=(const Model& other);
 
     // draws the model, and thus all its meshes
     void Render(Shader& shader);
     void Rotate(Shader& shader, float angle, const glm::vec3& axis);
-    
+    // Set the position of the model
+    void SetPosition(const glm::vec3& position);
+
 private:
     // loads a model with supported ASSIMP extensions from file and stores the resulting meshes in the meshes vector.
     void loadModel(string const& path);

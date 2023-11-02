@@ -1,13 +1,60 @@
 #include"model.h"
 
 
-Model::Model(string const& path, bool gamma) : gammaCorrection(gamma)
+Model::Model(string const& path, const glm::vec3& pos, bool gamma) : m_position(pos), gammaCorrection(gamma)
 {
     loadModel(path);
 }
+Model::Model(const Model& other)
+{
+    // Perform a deep copy of textures_loaded
+    for (const Texture& texture : other.textures_loaded) {
+        textures_loaded.push_back(texture);
+    }
 
+    // Perform a deep copy of meshes
+    for (const Mesh& mesh : other.meshes) {
+        meshes.push_back(mesh);
+    }
+
+    // Copy other data members
+    directory = other.directory;
+    gammaCorrection = other.gammaCorrection;
+    m_position = other.m_position;
+}
+Model& Model::operator=(const Model& other) {
+    if (this == &other) {
+        return *this; // Self-assignment guard
+    }
+
+    // Clear current data
+    textures_loaded.clear();
+    meshes.clear();
+
+    // Perform a deep copy of textures_loaded
+    for (const Texture& texture : other.textures_loaded) {
+        textures_loaded.push_back(texture);
+    }
+
+    // Perform a deep copy of meshes
+    for (const Mesh& mesh : other.meshes) {
+        meshes.push_back(mesh);
+    }
+
+    // Copy other data members
+    directory = other.directory;
+    gammaCorrection = other.gammaCorrection;
+    m_position = other.m_position;
+
+    return *this;
+}
 void Model::Render(Shader& shader)
 {
+    // Update the model matrix based on the position
+    glm::mat4 modelMatrix = glm::mat4(1.0f);
+    modelMatrix = glm::translate(modelMatrix, m_position);
+    shader.setMat4("model", modelMatrix);
+
     for (unsigned int i = 0; i < meshes.size(); i++)
         meshes[i].Render(shader);
 }
@@ -20,7 +67,10 @@ void Model::Rotate(Shader& shader, float angle, const glm::vec3& axis)
     model = rotation * model;
     shader.setMat4("model", model);
 }
-
+void Model::SetPosition(const glm::vec3& position)
+{
+    m_position = position;
+}
 void Model::loadModel(string const& path)
 {
     // read file via ASSIMP

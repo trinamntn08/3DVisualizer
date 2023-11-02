@@ -9,6 +9,7 @@
 #include<glm/gtx/vector_angle.hpp>
 #include<glfw3.h>
 #include<vector>
+#include"boundingBox.h"
 
 // Defines several possible options for camera movement. Used as abstraction to stay away from window-system specific input methods
 enum Camera_Movement {
@@ -31,7 +32,7 @@ public:
 	Camera(float verticalFOV, float nearClip, float farClip);
 
 	bool OnUpdate(GLFWwindow* window, float deltaTime =0.01);
-	void OnResize(uint32_t width, uint32_t height);
+	void OnResize(int viewport_Width, int viewport_Height);
 
 	const glm::mat4& GetProjectionMatrix() const { return m_Projection; }
 	const glm::mat4& GetInverseProjectionMatrix() const { return m_InverseProjection; }
@@ -43,6 +44,10 @@ public:
 
 	float GetRotationSpeed();
 	void ProcessMouseScroll(float yOffSet);
+
+	void LookAtBoundingBox(const BoundingBox& boundingBox);
+
+
 private:
 	void RecalculateProjection();
 	void RecalculateView();

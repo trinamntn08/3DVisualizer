@@ -8,18 +8,20 @@
 #include "shader.h"
 #include "camera.h"
 #include "model.h"
+#include "scene.h"
 
 #include <iostream>
+
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 
-// settings
-const unsigned int SCR_WIDTH = 800;
-const unsigned int SCR_HEIGHT = 600;
+// screen
+const unsigned int SCR_WIDTH = 1600;
+const unsigned int SCR_HEIGHT = 1200;
 
 // camera
-Camera camera(45.0f, 0.1f, 100.0f);
+Camera camera(45.0f, 0.1f, 1000.0f);
 float lastX = SCR_WIDTH / 2.0f;
 float lastY = SCR_HEIGHT / 2.0f;
 bool firstMouse = true;
@@ -78,13 +80,18 @@ int main()
     Shader ourShader("source/shader/vertex_core.glsl", "source/shader/fragment_core.glsl");
 
     // load models
- //   Model ourModel(std::string("source/resources/backpack/backpack.obj"));
-    //  Model ourModel(std::string("source/resources/bugatti/bugatti.obj"));
-      Model ourModel(std::string("source/resources/sphere_couple/sphere_couple.obj"));
+  //    Model ourModel(std::string("source/resources/backpack/backpack.obj"));
+  //    Model ourModel(std::string("source/resources/bugatti/bugatti.gltf"));
+  //      Model ourModel(std::string("source/resources/sphere_couple/sphere1.gltf"));
+   //     Model ourModel(std::string("source/resources/cat/cat.obj"));
+  //    Model ourModel(std::string("source/resources/cube/cube.gltf"));
 
-    
+
+      // Load Scene
+      Scene scene(std::string("source/resources/cube/cube.gltf"));
+      camera.LookAtBoundingBox(scene.getSceneBounds());
     // draw in wireframe
-    //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+   // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
     // render loop
     // -----------
@@ -101,18 +108,18 @@ int main()
 
         // render
         // ------
-        glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
+        glClearColor(0.08f, 0.16f, 0.18f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // enable shader before setting uniforms
         ourShader.activate();
 
         // view/projection transformations
-        glm::mat4 model = glm::mat4(0.2f);
+        glm::mat4 model = glm::mat4(1.0f);
         glm::mat4 view = camera.GetViewMatrix();
         glm::mat4 projection = camera.GetProjectionMatrix();
         // Scale object
-        glm::mat4 scaleMatrix = glm::scale(model,glm::vec3(0.1f));
+        glm::mat4 scaleMatrix = glm::scale(model, glm::vec3(1.0f));
         model = scaleMatrix * model;
         ourShader.setMat_MVP(model, view, projection);
 
@@ -123,7 +130,10 @@ int main()
         //ourModel.Rotate(ourShader, rotationAngle, glm::vec3(0.0f, 1.0f, 0.0f));
 
         // render the loaded model
-        ourModel.Render(ourShader);
+     //   ourModel.Render(ourShader);
+        
+        // Load  Scene
+        scene.Render(ourShader);
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------

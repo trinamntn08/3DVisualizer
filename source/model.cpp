@@ -1,9 +1,11 @@
 #include"model.h"
 
 
-Model::Model(string const& path, const glm::vec3& pos, bool gamma) : m_position(pos), gammaCorrection(gamma)
+Model::Model(string const& path, glm::vec3 scale, const glm::vec3& pos, bool gamma) :
+    m_scale(scale),m_position(pos), gammaCorrection(gamma)
 {
     loadModel(path);
+    ComputeBoundingBox();
 }
 Model::Model(const Model& other)
 {
@@ -21,6 +23,7 @@ Model::Model(const Model& other)
     directory = other.directory;
     gammaCorrection = other.gammaCorrection;
     m_position = other.m_position;
+    m_modelBounds = other.m_modelBounds;
 }
 Model& Model::operator=(const Model& other) {
     if (this == &other) {
@@ -52,13 +55,20 @@ void Model::Render(Shader& shader)
 {
     // Update the model matrix based on the position
     glm::mat4 modelMatrix = glm::mat4(1.0f);
+
+    //Apply transtion 
     modelMatrix = glm::translate(modelMatrix, m_position);
+    // Apply rotation
+    
+    // Apply scaling 
+    modelMatrix = glm::scale(modelMatrix, m_scale);
+    
     shader.setMat4("model", modelMatrix);
 
     for (unsigned int i = 0; i < meshes.size(); i++)
         meshes[i].Render(shader);
 }
-// Rotate the mesh
+
 void Model::Rotate(Shader& shader, float angle, const glm::vec3& axis)
 {
     // Create a rotation matrix
@@ -70,6 +80,7 @@ void Model::Rotate(Shader& shader, float angle, const glm::vec3& axis)
 void Model::SetPosition(const glm::vec3& position)
 {
     m_position = position;
+    UpdateBoundingBox();
 }
 void Model::loadModel(string const& path)
 {
@@ -266,4 +277,56 @@ unsigned int TextureFromFile(const char* path, const string& directory, bool gam
     }
 
     return textureID;
+}
+
+void Model::ComputeBoundingBox()
+{
+    if (meshes.empty()) 
+    {
+        return;
+    }
+    m_modelBounds.Reset();
+    // Initialize temporary bounds with the position of the first vertex
+    glm::vec3 minBound_temp = meshes[0].vertices[0].Position + m_position;
+    glm::vec3 maxBound_temp = minBound_temp;
+
+    // Iterate over each mesh within the model
+    for (const Mesh& mesh : meshes) 
+    {
+        // Iterate over each vertex within the mesh
+        for (const Vertex& vertex : mesh.vertices) 
+        {
+            // Apply the model's position to the vertex
+            glm::vec3 vertexPosition = vertex.Position  + m_position;
+
+            // Update the temporary bounds more efficiently
+            minBound_temp = glm::min(minBound_temp, vertexPosition);
+            maxBound_temp = glm::max(maxBound_temp, vertexPosition);
+        }
+    }
+
+    // Update the model's bounding box with scale
+    minBound_temp *= m_scale;
+    maxBound_temp *= m_scale;
+
+    m_modelBounds.setMinBound(minBound_temp);
+    m_modelBounds.setMaxBound(maxBound_temp);
+}
+
+void Model::UpdateBoundingBox()
+{
+    m_modelBounds.Move(m_position);
+}
+
+void Model::SetScale(glm::vec3 scale)
+{
+    m_scale = scale;
+}
+const glm::vec3& Model::GetScale() const
+{
+    return m_scale;
+}
+const BoundingBox& Model::GetBoundingBox() const
+{
+    return m_modelBounds;
 }

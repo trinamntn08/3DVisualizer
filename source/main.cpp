@@ -79,17 +79,10 @@ int main()
     // -------------------------
     Shader ourShader("source/shader/vertex_core.glsl", "source/shader/fragment_core.glsl");
 
-    // load models
-  //    Model ourModel(std::string("source/resources/backpack/backpack.obj"));
-  //    Model ourModel(std::string("source/resources/bugatti/bugatti.gltf"));
-  //      Model ourModel(std::string("source/resources/sphere_couple/sphere1.gltf"));
-   //     Model ourModel(std::string("source/resources/cat/cat.obj"));
-  //    Model ourModel(std::string("source/resources/cube/cube.gltf"));
+    // Load Scene
+    Scene scene;
+    camera.LookAtBoundingBox(scene.getSceneBounds());
 
-
-      // Load Scene
-      Scene scene(std::string("source/resources/cube/cube.gltf"));
-      camera.LookAtBoundingBox(scene.getSceneBounds());
     // draw in wireframe
    // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 

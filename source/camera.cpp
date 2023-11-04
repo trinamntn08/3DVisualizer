@@ -26,7 +26,7 @@ bool Camera::OnUpdate(GLFWwindow* window,float deltaTime)
 	constexpr glm::vec3 upDirection(0.0f, 1.0f, 0.0f);
 	glm::vec3 rightDirection = glm::cross(m_ForwardDirection, upDirection);
 
-	float speed = 10.f;
+	float speed = 20.f;
 	float velocity = speed * deltaTime;
 	//Mouse
 	if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
@@ -153,8 +153,7 @@ void Camera::LookAtBoundingBox(const BoundingBox& boundingBox)
 	float boundingBoxRadius = boundingBox.GetBoundingBoxRadius();
 
 	// Raise the camera position along the y-axis to view the object from above
-//	m_Position = boundingBoxCenter + glm::vec3(0.0f, 0.0f, 2.0f * boundingBoxRadius);
-	m_Position = boundingBoxCenter + glm::vec3(0.0f, 20.0f, 1.5* boundingBoxRadius);
+	m_Position = boundingBoxCenter + glm::vec3(0.0f, 10.0f, 2.0f * boundingBoxRadius);
 	m_ForwardDirection = glm::normalize(boundingBoxCenter - m_Position);
 
 	RecalculateView();

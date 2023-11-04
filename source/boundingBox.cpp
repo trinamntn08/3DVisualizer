@@ -1,34 +1,33 @@
 #include "boundingBox.h"
 #include"mesh.h"
-#include"model.h"
+//#include"model.h"
+
 BoundingBox::BoundingBox()
 {
     m_minBounds = glm::vec3(std::numeric_limits<float>::max());
     m_maxBounds = glm::vec3(std::numeric_limits<float>::lowest());
-    //m_minBounds = glm::vec3(0.0f);
-    //m_maxBounds = glm::vec3(0.1f, 0.1f, 0.1f);
 }
 
-void BoundingBox::ExpandToFit(const Model& model)
-{
-    // Initialize the bounds using the first vertex of the first mesh
-    if (model.meshes.empty() || model.meshes[0].vertices.empty()) {
-        return;
-    }
-
-    // Iterate over each mesh within the model
-    for (const Mesh& mesh : model.meshes) {
-        // Iterate over each vertex within the mesh
-        for (const Vertex& vertex : mesh.vertices) {
-            // Apply the model's position to the vertex
-            glm::vec3 vertexPosition = vertex.Position + model.m_position;
-
-            // Expand the bounds to fit the transformed vertex
-            m_minBounds = glm::min(m_minBounds, vertexPosition);
-            m_maxBounds = glm::max(m_maxBounds, vertexPosition);
-        }
-    }
-}
+//void BoundingBox::ExpandToFit(const Model& model)
+//{
+//    // Initialize the bounds using the first vertex of the first mesh
+//    if (model.meshes.empty() || model.meshes[0].vertices.empty()) {
+//        return;
+//    }
+//
+//    // Iterate over each mesh within the model
+//    for (const Mesh& mesh : model.meshes) {
+//        // Iterate over each vertex within the mesh
+//        for (const Vertex& vertex : mesh.vertices) {
+//            // Apply the model's position to the vertex
+//            glm::vec3 vertexPosition = vertex.Position + model.m_position;
+//
+//            // Expand the bounds to fit the transformed vertex
+//            m_minBounds = glm::min(m_minBounds, vertexPosition);
+//            m_maxBounds = glm::max(m_maxBounds, vertexPosition);
+//        }
+//    }
+//}
 
 glm::vec3 BoundingBox::GetCenter() const
 {
@@ -116,5 +115,36 @@ Mesh BoundingBox::toMesh()
 void BoundingBox::Render(Shader& shader)
 {
     Mesh bBox_mesh = toMesh();
+    // Update the model matrix based on the position
+    glm::mat4 modelMatrix = glm::mat4(1.0f);
+    shader.setMat4("model", modelMatrix);
     bBox_mesh.Render(shader);
+}
+
+
+void BoundingBox::ExpandToInclude(const BoundingBox& bbox)
+{
+    // Update the minimum and maximum bounds of the current bounding box
+    m_minBounds.x = std::min(m_minBounds.x, bbox.m_minBounds.x);
+    m_minBounds.y = std::min(m_minBounds.y, bbox.m_minBounds.y);
+    m_minBounds.z = std::min(m_minBounds.z, bbox.m_minBounds.z);
+
+    m_maxBounds.x = std::max(m_maxBounds.x, bbox.m_maxBounds.x);
+    m_maxBounds.y = std::max(m_maxBounds.y, bbox.m_maxBounds.y);
+    m_maxBounds.z = std::max(m_maxBounds.z, bbox.m_maxBounds.z);
+}
+
+void BoundingBox::Reset()
+{
+    m_minBounds = glm::vec3(std::numeric_limits<float>::max());
+    m_maxBounds = glm::vec3(std::numeric_limits<float>::lowest());
+}
+
+void BoundingBox::UpdateScale(float scale)
+{
+}
+void BoundingBox::Move(const glm::vec3& movePos)
+{
+    m_minBounds += movePos;
+    m_maxBounds += movePos;
 }

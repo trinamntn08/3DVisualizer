@@ -12,6 +12,7 @@
 
 #include "mesh.h"
 #include "shader.h"
+#include"boundingBox.h"
 
 #include <string>
 #include <fstream>
@@ -30,10 +31,11 @@ public:
     std::vector<Mesh>    meshes;
     string directory;
     glm::vec3 m_position= glm::vec3(0.0f);
-    bool gammaCorrection;
+    glm::vec3 m_scale = glm::vec3(1.0f);
+    bool gammaCorrection=true;
 
     // constructor, expects a filepath to a 3D model.
-    Model(string const& path, const glm::vec3 &pos = glm::vec3(0.0f), bool gamma = false);
+    Model(string const& path, glm::vec3 scale=glm::vec3(1.0f), const glm::vec3 &pos = glm::vec3(0.0f), bool gamma = true);
     // Copy constructor
     Model(const Model& other);
     // Copy assignment operator
@@ -44,6 +46,15 @@ public:
     void Rotate(Shader& shader, float angle, const glm::vec3& axis);
     // Set the position of the model
     void SetPosition(const glm::vec3& position);
+
+    void SetScale(glm::vec3 scale);
+
+    const glm::vec3& GetScale() const;
+
+    void ComputeBoundingBox();
+    void UpdateBoundingBox();
+
+    const BoundingBox& GetBoundingBox() const ;
 
 private:
     // loads a model with supported ASSIMP extensions from file and stores the resulting meshes in the meshes vector.
@@ -57,6 +68,8 @@ private:
     // checks all material textures of a given type and loads the textures if they're not loaded yet.
     // the required info is returned as a Texture struct.
     vector<Texture> loadMaterialTextures(aiMaterial* mat, aiTextureType type, string typeName);
+
+    BoundingBox m_modelBounds;
 };
 
 #endif

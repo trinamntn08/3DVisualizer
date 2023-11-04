@@ -5,9 +5,8 @@
 class Scene 
 {
 public:
-    Scene(const std::string& filePath);
+    Scene();
 
-    // Initialize the scene with 1000 cubes
     void InitializeCubes(const std::string& filePath);
 
     // Render all cubes in the scene
@@ -23,7 +22,14 @@ public:
         return m_sceneBounds;
     }
 
+    void UpdateSpiderPosition();
+
+
+    // for now, scene bounds only relates to cubes bounds
+    void CalculateSceneBounds();
+
 private:
     std::vector<Model> m_cubes;
+    Model m_spider;
     BoundingBox m_sceneBounds;
 };

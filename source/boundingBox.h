@@ -11,16 +11,28 @@ class BoundingBox
 public:
     BoundingBox();
 
-    // Expand the bounding box to include a point
-    void ExpandToFit(const Model& model);
+    void Reset();
 
-    // Calculate the center of the bounding box
+    // Expand the bounding box to include a model
+ //   void ExpandToFit(const Model& model);
+
     glm::vec3 GetCenter() const;
 
-    // Calculate the dimensions of the bounding box
     glm::vec3 GetDimensions() const;
     float GetBoundingBoxRadius() const;
     void Render(Shader& shader);
+    void ExpandToInclude(const BoundingBox& bbox);
+
+    void UpdateScale(float scale);
+
+    void Move(const glm::vec3& movePos);
+
+
+    void setMinBound(glm::vec3& minBound) { m_minBounds = minBound; };
+    void setMaxBound(glm::vec3& maxBound) { m_maxBounds = maxBound; };
+
+    const glm::vec3 GetMinBounds() const { return m_minBounds; };
+    const glm::vec3 GetMaxBounds() const { return m_maxBounds; };
 
     Mesh toMesh();
 

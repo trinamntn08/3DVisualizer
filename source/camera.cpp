@@ -153,7 +153,7 @@ void Camera::LookAtBoundingBox(const BoundingBox& boundingBox)
 	float boundingBoxRadius = boundingBox.GetBoundingBoxRadius();
 
 	// Raise the camera position along the y-axis to view the object from above
-	m_Position = boundingBoxCenter + glm::vec3(0.0f, 10.0f, 2.0f * boundingBoxRadius);
+	m_Position = boundingBoxCenter + glm::vec3(0.0f, 5.0f, 2.0f * boundingBoxRadius);
 	m_ForwardDirection = glm::normalize(boundingBoxCenter - m_Position);
 
 	RecalculateView();

@@ -3,8 +3,7 @@
 const std::string cubePath = std::string("source/resources/cube/cube.gltf");
 const std::string spiderPath = std::string("source/resources/spider/spider.obj");
 
-
-Scene::Scene(): m_spider(Model(spiderPath,glm::vec3(0.05f)))
+Scene::Scene(): m_spider(Model(spiderPath,glm::vec3(1.0f),glm::vec3(0.0f,0.0f,0.0f), glm::vec3(0.05f)))
 {
     m_sceneBounds = BoundingBox();
     InitializeCubes(cubePath);
@@ -17,15 +16,14 @@ void Scene::InitializeCubes(const std::string &filePath)
     m_cubes.clear();
     // Load the cube model from Model class
     Model cubeModel(filePath);
-    int numRows = 20; // Number of rows in the square grid
-    int numCols = 20; // Number of columns in the square grid
-    float spacing = 3.0f; // Spacing between cubes
+    int numRows = 20; 
+    int numCols = 20; 
+    float spacing = 2.0f; // Spacing between cubes
 
-    // Create 1000 cubes arranged in a square grid
+    // Create cubes arranged in a square grid
     for (int row = 0; row < numRows; row++) {
         for (int col = 0; col < numCols; col++) {
             Model cube_i = cubeModel;
-            // Set the position of the cube
             glm::vec3 position(col * spacing, 0.0f, row * spacing);
             cube_i.SetPosition(position);
             m_cubes.push_back(cube_i);
@@ -35,10 +33,7 @@ void Scene::InitializeCubes(const std::string &filePath)
 
 void Scene::CalculateSceneBounds()
 {
-    // Initialize the scene bounds to an invalid state
     m_sceneBounds.Reset();
-
-    // Iterate through all the cubes and update the scene's bounding box
     for (const Model& cube : m_cubes) 
     {
         const BoundingBox& cubeBounds = cube.GetBoundingBox();

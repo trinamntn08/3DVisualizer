@@ -1,8 +1,8 @@
 #include"model.h"
 
 
-Model::Model(string const& path, glm::vec3 scale, const glm::vec3& pos, bool gamma) :
-    m_scale(scale),m_position(pos), gammaCorrection(gamma)
+Model::Model(string const& path, const glm::vec3& pos, const glm::vec3& rot, glm::vec3 scale, bool gamma) :
+    m_position(pos), m_rotation(glm::radians(rot)), m_scale(scale), gammaCorrection(gamma)
 {
     loadModel(path);
     ComputeBoundingBox();
@@ -23,6 +23,7 @@ Model::Model(const Model& other)
     directory = other.directory;
     gammaCorrection = other.gammaCorrection;
     m_position = other.m_position;
+    m_rotation = other.m_rotation;
     m_modelBounds = other.m_modelBounds;
 }
 Model& Model::operator=(const Model& other) {
@@ -48,6 +49,8 @@ Model& Model::operator=(const Model& other) {
     directory = other.directory;
     gammaCorrection = other.gammaCorrection;
     m_position = other.m_position;
+    m_rotation = other.m_rotation;
+    m_scale = other.m_scale;
 
     return *this;
 }
@@ -59,7 +62,9 @@ void Model::Render(Shader& shader)
     //Apply transtion 
     modelMatrix = glm::translate(modelMatrix, m_position);
     // Apply rotation
-    
+    modelMatrix = glm::rotate(modelMatrix, m_rotation.z, glm::vec3(0, 0, 1));
+    modelMatrix = glm::rotate(modelMatrix, m_rotation.y, glm::vec3(0, 1, 0));
+    modelMatrix = glm::rotate(modelMatrix, m_rotation.x, glm::vec3(1, 0, 0));
     // Apply scaling 
     modelMatrix = glm::scale(modelMatrix, m_scale);
     

@@ -31,11 +31,13 @@ public:
     std::vector<Mesh>    meshes;
     string directory;
     glm::vec3 m_position= glm::vec3(0.0f);
+    glm::vec3 m_rotation = glm::vec3(0.0f);
     glm::vec3 m_scale = glm::vec3(1.0f);
     bool gammaCorrection=true;
 
     // constructor, expects a filepath to a 3D model.
-    Model(string const& path, glm::vec3 scale=glm::vec3(1.0f), const glm::vec3 &pos = glm::vec3(0.0f), bool gamma = true);
+    Model(string const& path, const glm::vec3& pos = glm::vec3(0.0f), const glm::vec3& rot = glm::vec3(0.0f),
+           glm::vec3 scale = glm::vec3(1.0f), bool gamma = true);
     // Copy constructor
     Model(const Model& other);
     // Copy assignment operator

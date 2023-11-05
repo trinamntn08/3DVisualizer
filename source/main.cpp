@@ -45,7 +45,7 @@ int main()
 
     // glfw window creation
     // --------------------
-    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "3DVisualizer", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "3D Visualizer", NULL, NULL);
     if (window == NULL)
     {
         std::cout << "Failed to create GLFW window" << std::endl;
@@ -77,7 +77,7 @@ int main()
 
     // build and compile shaders
     // -------------------------
-    Shader ourShader("source/shader/vertex_core.glsl", "source/shader/fragment_core.glsl");
+    Shader ourShader("source/shaders/vertex_core.glsl", "source/shaders/fragment_core.glsl");
 
     // Load Scene
     Scene scene;

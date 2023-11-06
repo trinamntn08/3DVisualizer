@@ -24,10 +24,12 @@ Camera camera(45.0f, 0.1f, 1000.0f);
 float lastX = SCR_WIDTH / 2.0f;
 float lastY = SCR_HEIGHT / 2.0f;
 bool firstMouse = true;
+float lastFrame_camera = 0.0f;
 
 // timing
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
+int counter = 0;
 
 int main()
 {
@@ -95,10 +97,26 @@ int main()
         // per-frame time logic
         // --------------------
         float currentFrame = static_cast<float>(glfwGetTime());
-        deltaTime = currentFrame - lastFrame;
-        lastFrame = currentFrame;
+        deltaTime = currentFrame - lastFrame; 
+
+        counter++; //nbr of frames
+
+        if (deltaTime >= 1.0f)
+        {
+            // Creates new title
+            std::string FPS = std::to_string(counter);
+            std::string ms = std::to_string((deltaTime / counter) * 1000);
+            std::string newTitle = "3D Visualizer - " + FPS + "FPS / " + ms + "ms";
+            glfwSetWindowTitle(window, newTitle.c_str());
+
+            // Resets times and counter
+            lastFrame = currentFrame;
+            counter = 0;
+        }
         
         // Process Input
+        deltaTime = currentFrame - lastFrame_camera;
+        lastFrame_camera = currentFrame;
         camera.OnUpdate(window, deltaTime);
 
         // render
@@ -108,6 +126,13 @@ int main()
 
         // enable shader before setting uniforms
         glEnable(GL_DEPTH_TEST);
+        //// Enables Cull Facing
+        //glEnable(GL_CULL_FACE);
+        //// Keeps front faces
+        //glCullFace(GL_FRONT);
+        //// Uses counter clock-wise standard
+        //glFrontFace(GL_CCW);
+
         ourShader.activate();
 
         // view/projection transformations

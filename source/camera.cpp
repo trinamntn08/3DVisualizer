@@ -26,7 +26,7 @@ bool Camera::OnUpdate(GLFWwindow* window,float deltaTime)
 	constexpr glm::vec3 upDirection(0.0f, 1.0f, 0.0f);
 	glm::vec3 rightDirection = glm::cross(m_ForwardDirection, upDirection);
 
-	float speed = 15.0f;
+	float speed = 10.0f;
 	float velocity = speed * deltaTime;
 	//Mouse
 	if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)

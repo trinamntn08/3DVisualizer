@@ -88,24 +88,24 @@ Mesh BoundingBox::toMesh()
         |/      |/
         0------ 1   */
 
-        // Front face
-        0, 1, 2, // Triangle 1
-        0, 2, 3, // Triangle 2
-        // Back face
-        4, 5, 6, // Triangle 1
-        4, 6, 7, // Triangle 2
-        // Left face
-        0, 4, 3, // Triangle 1
-        3, 4, 7, // Triangle 2
-        // Right face
-        1, 5, 2, // Triangle 1
-        2, 5, 6, // Triangle 2
-        // Top face
-        3, 2, 7, // Triangle 1
-        2, 6, 7, // Triangle 2
-        // Bottom face
-        0, 1, 4, // Triangle 1
-        1, 5, 4  // Triangle 2
+        // Front
+        0, 1, 2,
+        0, 2, 3,
+        // Back
+        4, 5, 6,
+        4, 6, 7,
+        // Left 
+        0, 4, 3,
+        3, 4, 7,
+        // Right
+        1, 5, 2,
+        2, 5, 6,
+        // Top 
+        3, 2, 7,
+        2, 6, 7,
+        // Bottom
+        0, 1, 4,
+        1, 5, 4
     };
 
     // Create a Mesh instance using the vertices and indices

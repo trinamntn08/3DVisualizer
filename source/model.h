@@ -21,7 +21,8 @@
 #include <map>
 #include <vector>
 
-unsigned int TextureFromFile(const char *path, const string &directory, bool gamma = false);
+unsigned int TextureFromFile(const char* path, const string& directory, bool gamma=true);
+unsigned int TextureForSkyFromFile(const char* path, const string& directory, bool gamma);
 
 class Model 
 {
@@ -34,7 +35,8 @@ public:
     glm::vec3 m_rotation = glm::vec3(0.0f);
     glm::vec3 m_scale = glm::vec3(1.0f);
     bool gammaCorrection=true;
-
+    BoundingBox m_modelBounds;
+    Model();
     // constructor, expects a filepath to a 3D model.
     Model(string const& path, const glm::vec3& pos = glm::vec3(0.0f), const glm::vec3& rot = glm::vec3(0.0f),
            glm::vec3 scale = glm::vec3(1.0f), bool gamma = true);
@@ -71,7 +73,7 @@ private:
     // the required info is returned as a Texture struct.
     vector<Texture> loadMaterialTextures(aiMaterial* mat, aiTextureType type, string typeName);
 
-    BoundingBox m_modelBounds;
+ 
 };
 
 #endif

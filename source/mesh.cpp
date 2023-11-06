@@ -1,6 +1,12 @@
 #include"mesh.h"
 
-
+Mesh::Mesh():VAO(0) 
+{
+    // Initialize other data members
+    vertices.clear();
+    indices.clear();
+    textures.clear();
+}
 Mesh::Mesh(vector<Vertex> vertices, vector<unsigned int> indices, vector<Texture> textures)
 {
     this->vertices = vertices;
@@ -25,6 +31,7 @@ void Mesh::Render(Shader& shader)
     unsigned int specularNr = 1;
     unsigned int normalNr = 1;
     unsigned int heightNr = 1;
+
     for (unsigned int i = 0; i < textures.size(); i++)
     {
         glActiveTexture(GL_TEXTURE0 + i); // active proper texture unit before binding
@@ -39,7 +46,6 @@ void Mesh::Render(Shader& shader)
             number = std::to_string(normalNr++); // transfer unsigned int to string
         else if (name == "texture_height")
             number = std::to_string(heightNr++); // transfer unsigned int to string
-
         // now set the sampler to the correct texture unit
         glUniform1i(glGetUniformLocation(shader.ID, (name + number).c_str()), i);
         // and finally bind the texture
@@ -54,7 +60,42 @@ void Mesh::Render(Shader& shader)
     // always good practice to set everything back to defaults once configured.
     glActiveTexture(GL_TEXTURE0);
 }
+void Mesh::RenderSky(Shader& shader)
+{
+    // Disable depth testing to ensure the skybox is always drawn behind other objects
+    glDisable(GL_DEPTH_TEST);
+    std::string nameTex = "cubemap";
+    for (unsigned int i = 0; i < textures.size(); i++)
+    {
+        glActiveTexture(GL_TEXTURE0 + i); // active proper texture unit before binding
+        glEnable(GL_TEXTURE_CUBE_MAP);
+        GLint location = glGetUniformLocation(shader.ID, nameTex.c_str());
+        glUniform1i(location, i);
+        if (location == -1) 
+        {
+            std::cerr << "Error: Uniform location not found for " << nameTex << i << std::endl;
+            // Handle the error as needed
+        }
+        else {
+            glUniform1i(location, i);
+            GLenum error = glGetError();
+            if (error != GL_NO_ERROR) {
+              //  std::cerr << "Error setting uniform value: " << gluErrorString(error) << std::endl;
+                // Handle the error as needed
+            }
+        }
+        glBindTexture(GL_TEXTURE_CUBE_MAP, textures[i].id);
+    }
 
+    // Render the skybox
+    glBindVertexArray(VAO);
+    glDrawElements(GL_TRIANGLES, static_cast<unsigned int>(indices.size()), GL_UNSIGNED_INT, 0);
+    glBindVertexArray(0);
+    // always good practice to set everything back to defaults once configured.
+    glActiveTexture(GL_TEXTURE0);
+    // Re-enable depth testing
+    glEnable(GL_DEPTH_TEST);
+}
 void Mesh::setupMesh()
 {
     // create buffers/arrays

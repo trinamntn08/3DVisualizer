@@ -12,7 +12,6 @@
 
 #include <iostream>
 
-
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 
@@ -73,18 +72,21 @@ int main()
 
     // configure global opengl state
     // -----------------------------
-    glEnable(GL_DEPTH_TEST);
+ //   glEnable(GL_DEPTH_TEST);
 
     // build and compile shaders
     // -------------------------
     Shader ourShader("source/shaders/vertex_core.glsl", "source/shaders/fragment_core.glsl");
+    Shader skyShader("source/shaders/skybox_vertex.glsl", "source/shaders/skybox_fragment.glsl");
 
     // Load Scene
     Scene scene;
-    camera.LookAtBoundingBox(scene.getSceneBounds());
+
+     camera.LookAtBoundingBox(scene.getSceneBounds());
+  //  camera.SetPosition(glm::vec3(0.0f, 0.0f, 0.0f)); 
 
     // draw in wireframe
-   // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
     // render loop
     // -----------
@@ -105,6 +107,7 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // enable shader before setting uniforms
+        glEnable(GL_DEPTH_TEST);
         ourShader.activate();
 
         // view/projection transformations
@@ -114,20 +117,34 @@ int main()
         // Scale object
         glm::mat4 scaleMatrix = glm::scale(model, glm::vec3(1.0f));
         model = scaleMatrix * model;
+
         ourShader.setMat_MVP(model, view, projection);
 
-        ////Rotate model
+        //Rotate model
         //float currentTime = static_cast<float>(glfwGetTime());
         //float rotationSpeed = 45.0f;  // Adjust the rotation speed as needed
         //float rotationAngle = glm::radians(rotationSpeed * currentTime);
         //ourModel.Rotate(ourShader, rotationAngle, glm::vec3(0.0f, 1.0f, 0.0f));
 
-        // render the loaded model
-     //   ourModel.Render(ourShader);
-        
-        // Load  Scene
-        scene.Render(ourShader);
+        // Render Scene's Objects
+         scene.RenderObjects(ourShader);
 
+         // Render CubeMap
+         glDepthFunc(GL_LEQUAL);
+         skyShader.activate();
+         // view/projection transformations
+         glm::mat4 model_cubemap = glm::mat4(1.0f);
+         glm::mat4 view_cubemap = camera.GetViewMatrix();
+         glm::mat4 projection_cubemap = glm::mat4(1.0f);
+         view_cubemap = glm::mat4(glm::mat3(glm::lookAt(camera.GetPosition(), camera.GetPosition() + camera.GetDirection(), glm::vec3(0, 1, 0))));
+         projection_cubemap = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / SCR_HEIGHT, 0.1f, 100.0f);
+         // Scale object
+    //     glm::mat4 scaleMatrix_cubemap = glm::scale(model_cubemap, glm::vec3(1.0f));
+    //     model_cubemap = scaleMatrix_cubemap * model_cubemap;
+         skyShader.setMat_MVP(model_cubemap, view_cubemap, projection_cubemap);
+         scene.RenderCubeMap(skyShader);
+
+        glDepthFunc(GL_LESS);
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
         glfwSwapBuffers(window);

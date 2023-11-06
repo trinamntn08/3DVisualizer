@@ -47,6 +47,7 @@ public:
 
 	void LookAtBoundingBox(const BoundingBox& boundingBox);
 
+	void SetPosition(glm::vec3&& pos);
 
 private:
 	void RecalculateProjection();

@@ -1,5 +1,5 @@
 #include"camera.h"
-
+#include <glad/glad.h>
 Camera::Camera(float verticalFOV, float nearClip, float farClip)
 	: m_VerticalFOV(verticalFOV), m_NearClip(nearClip), m_FarClip(farClip)
 {
@@ -29,7 +29,8 @@ bool Camera::OnUpdate(GLFWwindow* window,float deltaTime)
 	float speed = 10.0f;
 	float velocity = speed * deltaTime;
 	//Mouse
-	if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
+	
+	if(glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS)
 	{
 		// Hides mouse cursor
 		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
@@ -164,3 +165,7 @@ void Camera::SetPosition(glm::vec3&& pos)
 	m_Position = pos;
 	RecalculateView();
 }
+
+
+
+

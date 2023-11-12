@@ -49,6 +49,9 @@ public:
 
 	void SetPosition(glm::vec3&& pos);
 
+	int GetViewPortWidth() { return m_ViewportWidth; };
+	int GetViewPortHeight() { return m_ViewportHeight; };
+
 private:
 	void RecalculateProjection();
 	void RecalculateView();

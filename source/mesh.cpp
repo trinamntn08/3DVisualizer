@@ -96,6 +96,7 @@ void Mesh::RenderSky(Shader& shader)
     // Re-enable depth testing
     glEnable(GL_DEPTH_TEST);
 }
+
 void Mesh::setupMesh()
 {
     // create buffers/arrays

@@ -20,6 +20,11 @@ public:
         return m_cubes;
     }
 
+    Model& getSpider()
+    {
+        return m_spider;
+    }
+
     const BoundingBox& getSceneBounds() const
     {
         return m_sceneBounds;
@@ -27,11 +32,11 @@ public:
 
     void UpdateSpiderPosition();
 
-
-    // for now, scene bounds only relates to cubes bounds
     void CalculateSceneBounds();
 
-    Mesh generateSkyBox();
+    Mesh InitializeCubemap();
+
+    void loadScene();
 
 private:
     std::vector<Model> m_cubes;

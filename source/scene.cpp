@@ -5,13 +5,16 @@ const std::string spiderPath = std::string("source/resources/spider/spider.obj")
 
 Scene::Scene()
 {
-    m_sceneBounds = BoundingBox();
+};
+
+void Scene::loadScene()
+{
     InitializeCubes(cubePath);
     CalculateSceneBounds();
-    m_spider =Model(spiderPath, glm::vec3(0.0f), glm::vec3(0.0f),  glm::vec3(0.05f));
+    m_spider = Model(spiderPath, glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(0.05f));
     UpdateSpiderPosition();
-    m_cubemap = generateSkyBox();
-};
+    m_cubemap = InitializeCubemap();
+}
 
 void Scene::InitializeCubes(const std::string &filePath)
 {
@@ -65,13 +68,13 @@ void Scene::RenderObjects(Shader& shader)
     {
         cube.Render(shader);
     }
-  //   m_sceneBounds.Render(shader);
+     m_sceneBounds.Render(shader);
 
    // Render spider and its boundingBox
     m_spider.Render(shader);
 
-   /* BoundingBox spider_Bounds = m_spider.GetBoundingBox();
-    spider_Bounds.Render(shader);*/
+    BoundingBox spider_Bounds = m_spider.GetBoundingBox();
+    spider_Bounds.Render(shader);
 
 }
 void Scene::RenderCubeMap(Shader& shader_cubemap)
@@ -79,7 +82,7 @@ void Scene::RenderCubeMap(Shader& shader_cubemap)
     shader_cubemap.activate();
     m_cubemap.Render(shader_cubemap);
 }
-Mesh Scene::generateSkyBox()
+Mesh Scene::InitializeCubemap()
 {
     // cube vertices for vertex buffer object
     std::vector<Vertex> vertices;
@@ -166,6 +169,7 @@ Mesh Scene::generateSkyBox()
 
     return Mesh(vertices, indices, textures_loaded);
 }
+
 
 std::vector<Texture> LoadCubeMapTextures(std::vector<std::string> textures_faces)
 {

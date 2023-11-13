@@ -1,5 +1,5 @@
 #include "boundingBox.h"
-#include"mesh.h"
+#include "mesh.h"
 //#include"model.h"
 
 BoundingBox::BoundingBox()
@@ -147,4 +147,31 @@ void BoundingBox::Move(const glm::vec3& movePos)
 {
     m_minBounds += movePos;
     m_maxBounds += movePos;
+}
+
+
+bool BoundingBox::CheckCollision(const BoundingBox& other)
+{
+    // Check for no-overlap conditions along each axis
+    if (m_maxBounds.x < other.m_minBounds.x || m_minBounds.x > other.m_maxBounds.x)
+        return false;
+    if (m_maxBounds.y < other.m_minBounds.y || m_minBounds.y > other.m_maxBounds.y)
+        return false;
+    if (m_maxBounds.z < other.m_minBounds.z || m_minBounds.z > other.m_maxBounds.z)
+        return false;
+
+    // If no no-overlap condition is met, the boxes are colliding
+    return true;
+}
+
+// Implementation of the static member function
+bool BoundingBox::CheckCollision(const BoundingBox& box1, const BoundingBox& box2)
+{
+    // Check for collision between box1 and box2 using their min and max bounds
+    if (box1.m_maxBounds.x < box2.m_minBounds.x || box1.m_minBounds.x > box2.m_maxBounds.x) return false;
+    if (box1.m_maxBounds.y < box2.m_minBounds.y || box1.m_minBounds.y > box2.m_maxBounds.y) return false;
+    if (box1.m_maxBounds.z < box2.m_minBounds.z || box1.m_minBounds.z > box2.m_maxBounds.z) return false;
+
+    // If no no-overlap condition is met, the boxes are colliding
+    return true;
 }

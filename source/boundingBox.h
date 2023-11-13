@@ -13,9 +13,6 @@ public:
 
     void Reset();
 
-    // Expand the bounding box to include a model
- //   void ExpandToFit(const Model& model);
-
     glm::vec3 GetCenter() const;
 
     glm::vec3 GetDimensions() const;
@@ -35,6 +32,10 @@ public:
     const glm::vec3 GetMaxBounds() const { return m_maxBounds; };
 
     Mesh toMesh();
+
+    bool CheckCollision(const BoundingBox& other);
+
+    static bool CheckCollision(const BoundingBox& box1, const BoundingBox& box2);
 
 private:
     glm::vec3 m_minBounds; //The vector is closest to the origin (0,0,0)

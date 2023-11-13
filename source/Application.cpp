@@ -105,41 +105,16 @@ void Application::Run()
     m_scene.loadScene();
     m_camera.LookAtBoundingBox(m_scene.getSceneBounds());
 
-    static int counter = 0;
+
     // render loop
     while (!glfwWindowShouldClose(m_window))
     {
-        MoveObject();
         // per-frame time logic
         float currentFrame = static_cast<float>(glfwGetTime());
         m_frameTime = currentFrame - m_lastFrameTime;
-        m_timeStep += m_frameTime;
-        m_lastFrameTime = currentFrame;
-        counter++; //nbr of frames
 
-        // Update title every second
-        if (m_timeStep >= 1.0f)
-        {
-            // Avoid division by zero
-            if (counter > 0)
-            {
-                // Calculate FPS and milliseconds per frame
-                float fps = counter / m_timeStep;
-                float msPerFrame = m_timeStep / (counter) * 1000.0f;
-
-                // Creates new title
-                std::string FPS = std::to_string(static_cast<int>(fps));
-                std::string ms = std::to_string((msPerFrame));
-                std::string newTitle = "3D Visualizer - " + FPS + "FPS / " + ms + "ms";
-
-                glfwSetWindowTitle(m_window, newTitle.c_str());
-            }
-
-            // Reset counters and timer
-            m_timeStep = 0.0f;
-            counter = 0;
-        }
-
+        DisplayFPS(currentFrame);
+        MoveObject();
         m_camera.OnUpdate(m_window, m_frameTime);
 
         // render
@@ -178,6 +153,38 @@ void Application::Run()
         // -------------------------------------------------------------------------------
         glfwSwapBuffers(m_window);
         glfwPollEvents();
+    }
+}
+
+void Application::DisplayFPS(float currentFrame)
+{
+    static int counter = 0;
+    
+    m_timeStep += m_frameTime;
+    m_lastFrameTime = currentFrame;
+    counter++; //nbr of frames
+
+    // Update title every second
+    if (m_timeStep >= 1.0f)
+    {
+        // Avoid division by zero
+        if (counter > 0)
+        {
+            // Calculate FPS and milliseconds per frame
+            float fps = counter / m_timeStep;
+            float msPerFrame = m_timeStep / (counter) * 1000.0f;
+
+            // Creates new title
+            std::string FPS = std::to_string(static_cast<int>(fps));
+            std::string ms = std::to_string((msPerFrame));
+            std::string newTitle = "3D Visualizer - " + FPS + "FPS / " + ms + "ms";
+
+            glfwSetWindowTitle(m_window, newTitle.c_str());
+        }
+
+        // Reset counters and timer
+        m_timeStep = 0.0f;
+        counter = 0;
     }
 }
 
@@ -278,13 +285,26 @@ void Application::MoveObject()
                 grabOffset = intersectPoint - m_scene.getSpider().m_position;
             }
 
-            if (isObjectGrabbed)
+            if(isObjectGrabbed)
             {
-                // Move the object only if it's grabbed
-                glm::vec3 movePos(intersectPoint.x - grabOffset.x, intersectPoint.y - grabOffset.y, intersectPoint.z - grabOffset.z);
-                m_scene.getSpider().SetPosition(movePos);
-            }
+                BoundingBox bbox_spider = m_scene.getSpider().GetBoundingBox();
 
+                // Check for collisions with other objects in the scene
+                bool collisionDetected = bbox_spider.CheckCollision(m_scene.getSceneBounds());
+
+                if (!collisionDetected)
+                {
+                    // Move the object only if it's grabbed and there are no collisions
+                    glm::vec3 movePos(intersectPoint.x - grabOffset.x, intersectPoint.y - grabOffset.y, intersectPoint.z - grabOffset.z);
+                    m_scene.getSpider().SetPosition(movePos);
+                }
+                else
+                {
+                    glm::vec3 movePos(intersectPoint.x - grabOffset.x, m_scene.getSceneBounds().GetMaxBounds().y, intersectPoint.z - grabOffset.z);
+                    m_scene.getSpider().SetPosition(movePos);
+                    std::cout << "Collision detected!" << std::endl;
+                }
+            }
         }
     }
     else

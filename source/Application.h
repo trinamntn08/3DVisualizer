@@ -36,10 +36,11 @@ public:
 
 	void Run();
 
+	void DisplayFPS(float currentTime);
+
 	void MoveObject();
 	bool RayIntersectsBoundingBox(glm::vec2 &mousePos, glm::vec3& intersectPoint);
 	bool RayIntersectsBoundingBox(const Ray& ray, const BoundingBox& bbox,glm::vec3& intersectPts);
-
 
 
 private:
@@ -64,7 +65,6 @@ private:
 	Scene m_scene;
 
 	// Mouse
-//	MouseButton m_mouse;
 	MouseHandler m_mouseHandler;
 
 };

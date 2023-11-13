@@ -12,18 +12,54 @@ static const float RAY_RANGE = 600.0f;
 struct MouseButton
 {
     bool isLeftPressed = false;
-    int x;
-    int y;
+    int x=0;
+    int y=0;
 };
 
+class MouseHandler
+{
+public:
+    MouseHandler():leftButton() {};
+    MouseButton leftButton;
+
+    void updateMousePosition(int x, int y)
+    {
+        leftButton.x = x;
+        leftButton.y = y;
+    }
+
+    void setLeftButtonState(bool isPressed)
+    {
+        leftButton.isLeftPressed = isPressed;
+    }
+
+    void onLeftMouseDown(int x, int y)
+    {
+        setLeftButtonState(true);
+        updateMousePosition(x, y);
+    }
+
+    void onLeftMouseUp(int x, int y)
+    {
+        setLeftButtonState(false);
+        updateMousePosition(x, y);
+    }
+
+
+    void onMouseMove(int x, int y)
+    {
+        if (leftButton.isLeftPressed)
+        {
+           updateMousePosition(x, y);
+        }
+    }
+};
 
 class MousePicker 
 {
 public:
     MousePicker(Camera camera);
     void update();
-
-    glm::vec3 GetCurrentTerrainPoint();
 
     glm::vec3 GetCurrentRay();
     glm::vec2 ViewportToNDC(float mouseX, float mouseY);

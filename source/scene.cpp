@@ -68,13 +68,13 @@ void Scene::RenderObjects(Shader& shader)
     {
         cube.Render(shader);
     }
-     m_sceneBounds.Render(shader);
+     //m_sceneBounds.Render(shader);
 
    // Render spider and its boundingBox
     m_spider.Render(shader);
 
-    BoundingBox spider_Bounds = m_spider.GetBoundingBox();
-    spider_Bounds.Render(shader);
+    /*BoundingBox spider_Bounds = m_spider.GetBoundingBox();
+    spider_Bounds.Render(shader);*/
 
 }
 void Scene::RenderCubeMap(Shader& shader_cubemap)

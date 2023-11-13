@@ -29,7 +29,6 @@ bool Camera::OnUpdate(GLFWwindow* window,float deltaTime)
 	float speed = 10.0f;
 	float velocity = speed * deltaTime;
 	//Mouse
-	
 	if(glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS)
 	{
 		// Hides mouse cursor
@@ -67,7 +66,7 @@ bool Camera::OnUpdate(GLFWwindow* window,float deltaTime)
 			}
 		}
 	}
-	else if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_RELEASE)
+	else if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_RELEASE)
 	{
 		// Unhides cursor since camera is not looking around anymore
 		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);

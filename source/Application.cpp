@@ -13,6 +13,8 @@ Application::Application(const AppSpecification& appSpec):
 {
     Init();
     InitShader();
+    // draw in wireframe
+   // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 }
 
 Application::~Application()
@@ -38,22 +40,48 @@ void Application::Init()
         glfwTerminate();
         return;
     }
-    glfwMakeContextCurrent(m_window);
+    // Set the user pointer to the instance of the Application class
+    glfwSetWindowUserPointer(m_window, this);
 
     //Update screen's size
     glfwSetFramebufferSizeCallback(m_window, [](GLFWwindow* window, int width, int height)
     {
         glViewport(0, 0, width, height);
+        Application* instance = static_cast<Application*>(glfwGetWindowUserPointer(window));
+        instance->m_spec.height = height;
+        instance->m_spec.width = width;
+        
     });
 
     glfwSetScrollCallback(m_window, [](GLFWwindow* window, double xoffset, double yoffset) 
     {
-        // TODO--- Scroll mouse
+        Application* instance = static_cast<Application*>(glfwGetWindowUserPointer(window));
+        instance->m_camera.ProcessMouseScroll(static_cast<float>(yoffset));
     });
 
+    glfwSetMouseButtonCallback(m_window, [](GLFWwindow* window, int button, int action, int mods)
+    {
+        Application* instance = static_cast<Application*>(glfwGetWindowUserPointer(window));
+        if (button == GLFW_MOUSE_BUTTON_LEFT)
+        {
+            double xpos, ypos;
+            glfwGetCursorPos(window, &xpos, &ypos);
+
+            if (action == GLFW_PRESS)
+            {
+                instance->m_mouseHandler.onLeftMouseDown(static_cast<int>(xpos), static_cast<int>(ypos));
+            }
+            else if (action == GLFW_RELEASE)
+            {
+                instance->m_mouseHandler.onLeftMouseUp(static_cast<int>(xpos), static_cast<int>(ypos));
+            }
+        }
+    });
     // capture mouse
     glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 
+
+    glfwMakeContextCurrent(m_window);
     // glad: load all OpenGL function pointers
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
     {
@@ -77,26 +105,11 @@ void Application::Run()
     m_scene.loadScene();
     m_camera.LookAtBoundingBox(m_scene.getSceneBounds());
 
-    int counter = 0;
+    static int counter = 0;
     // render loop
     while (!glfwWindowShouldClose(m_window))
     {
-        // Click on objects
-        if (glfwGetMouseButton(m_window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
-        {
-            // Get mouse cursor position
-            double mouseX, mouseY;
-            glfwGetCursorPos(m_window, &mouseX, &mouseY);
-            // Perform ray intersection with bounding box
-            glm::vec2 mousePosition((float)(mouseX), (float)(mouseY));
-            bool intersection = RayIntersectsBoundingBox(mousePosition);
-
-            if (intersection)
-            {
-                std::cout << "Bounding Box Clicked!" << std::endl;
-            }
-
-        }
+        MoveObject();
         // per-frame time logic
         float currentFrame = static_cast<float>(glfwGetTime());
         m_frameTime = currentFrame - m_lastFrameTime;
@@ -104,14 +117,26 @@ void Application::Run()
         m_lastFrameTime = currentFrame;
         counter++; //nbr of frames
 
+        // Update title every second
         if (m_timeStep >= 1.0f)
         {
-            // Creates new title
-            std::string FPS = std::to_string(counter);
-            std::string ms = std::to_string((m_timeStep / counter) * 1000);
-            std::string newTitle = "3D Visualizer - " + FPS + "FPS / " + ms + "ms";
-            glfwSetWindowTitle(m_window, newTitle.c_str());
-            m_timeStep = 0;
+            // Avoid division by zero
+            if (counter > 0)
+            {
+                // Calculate FPS and milliseconds per frame
+                float fps = counter / m_timeStep;
+                float msPerFrame = m_timeStep / (counter) * 1000.0f;
+
+                // Creates new title
+                std::string FPS = std::to_string(static_cast<int>(fps));
+                std::string ms = std::to_string((msPerFrame));
+                std::string newTitle = "3D Visualizer - " + FPS + "FPS / " + ms + "ms";
+
+                glfwSetWindowTitle(m_window, newTitle.c_str());
+            }
+
+            // Reset counters and timer
+            m_timeStep = 0.0f;
             counter = 0;
         }
 
@@ -156,7 +181,7 @@ void Application::Run()
     }
 }
 
-bool Application::RayIntersectsBoundingBox(glm::vec2& mousePos)
+bool Application::RayIntersectsBoundingBox(glm::vec2& mousePos, glm::vec3& intersectPoint)
 {
     // Convert mouse position to normalized device coordinates (NDC)
     float ndcX = (2.0f * mousePos.x) / m_camera.GetViewPortWidth() - 1.0f;
@@ -183,11 +208,12 @@ bool Application::RayIntersectsBoundingBox(glm::vec2& mousePos)
     ray.Origin = glm::vec3(nearPointView);
     ray.Direction = glm::normalize(glm::vec3(farPointView - nearPointView));
 
-    bool hit =  RayIntersectsBoundingBox(ray, m_scene.getSpider().GetBoundingBox());
+    BoundingBox bbox = m_scene.getSpider().GetBoundingBox();
+    bool hit =  RayIntersectsBoundingBox(ray, bbox, intersectPoint);
     return hit;
 }
 
-bool Application::RayIntersectsBoundingBox(const Ray& ray, const BoundingBox& bbox)
+bool Application::RayIntersectsBoundingBox(const Ray& ray, const BoundingBox& bbox, glm::vec3& intersectPts)
 {
     // Perform ray-box intersection tests
     float txmin, txmax, tymin, tymax, tzmin, tzmax;
@@ -214,20 +240,57 @@ bool Application::RayIntersectsBoundingBox(const Ray& ray, const BoundingBox& bb
         std::swap(tzmin, tzmax);
     }
 
-    float tmin = std::max(txmin, tymin);
-    float tmax = std::min(txmax, tymax);
+    float tmin = std::max(txmin, std::max(tymin, tzmin));
+    float tmax = std::min(txmax, std::min(tymax, tzmax));
 
     if (txmin > tymax || tymin > txmax)
         return false;
-    if (tmin > tzmax || tzmin > tmax)
+    if (txmin > tzmax || tzmin > txmax)
         return false;
 
-    if (tzmin > tmin)
-        tmin = tzmin;
-
-    if (tzmax < tmax)
-        tmax = tzmax;
+    // Calculate the intersection point
+    intersectPts = ray.Origin + tmin * ray.Direction;
 
     return true;
+}
+
+void Application::MoveObject()
+{
+    static bool isObjectGrabbed = false;
+    static glm::vec3 grabOffset;
+    // Click on objects
+    if (m_mouseHandler.leftButton.isLeftPressed)
+    {
+        // Get mouse cursor position
+        double mouseX, mouseY;
+        glfwGetCursorPos(m_window, &mouseX, &mouseY);
+        glm::vec2 mousePosition((float)mouseX, (float)mouseY);
+        glm::vec3 intersectPoint;
+        bool hit = RayIntersectsBoundingBox(mousePosition, intersectPoint);
+
+        if (hit)
+        {
+            std::cout << "Bounding Box Clicked! " << std::endl;
+            if (!isObjectGrabbed)
+            {
+                // Grab the object on the first press
+                isObjectGrabbed = true;
+                grabOffset = intersectPoint - m_scene.getSpider().m_position;
+            }
+
+            if (isObjectGrabbed)
+            {
+                // Move the object only if it's grabbed
+                glm::vec3 movePos(intersectPoint.x - grabOffset.x, intersectPoint.y - grabOffset.y, intersectPoint.z - grabOffset.z);
+                m_scene.getSpider().SetPosition(movePos);
+            }
+
+        }
+    }
+    else
+    {
+        // Reset isObjectGrabbed when the left mouse button is released
+        isObjectGrabbed = false;
+    }
 }
 

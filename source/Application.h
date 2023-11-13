@@ -11,8 +11,8 @@
 #include"camera.h"
 #include"model.h"
 #include"scene.h"
-#include"pickingTexture.h"
-#include"mousePicker.h"
+#include"pickingTexture.h" // Not used yet
+#include"mousePicker.h" // Not used yet
 #include"traceRay.h"
 
 struct AppSpecification
@@ -36,9 +36,9 @@ public:
 
 	void Run();
 
-	bool RayIntersectsBoundingBox(glm::vec2 &mousePos);
-
-	bool RayIntersectsBoundingBox(const Ray& ray, const BoundingBox& bbox);
+	void MoveObject();
+	bool RayIntersectsBoundingBox(glm::vec2 &mousePos, glm::vec3& intersectPoint);
+	bool RayIntersectsBoundingBox(const Ray& ray, const BoundingBox& bbox,glm::vec3& intersectPts);
 
 
 
@@ -63,6 +63,11 @@ private:
 	// Scene
 	Scene m_scene;
 
+	// Mouse
+//	MouseButton m_mouse;
+	MouseHandler m_mouseHandler;
+
 };
+
 // Called from entrypoint
 Application* CreateApplication();

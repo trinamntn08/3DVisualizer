@@ -55,10 +55,12 @@ public:
 
     const glm::vec3& GetScale() const;
 
-    void ComputeBoundingBox();
-    void UpdateBoundingBox();
+    void ComputeBoundingBox(); // initialization
+    void UpdateBoundingBox(glm::vec3 deltaPos); // update when event changed
 
     const BoundingBox& GetBoundingBox() const ;
+
+    void Move(glm::vec3& newPos);
 
 private:
     // loads a model with supported ASSIMP extensions from file and stores the resulting meshes in the meshes vector.

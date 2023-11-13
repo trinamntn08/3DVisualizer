@@ -87,8 +87,9 @@ void Model::Rotate(Shader& shader, float angle, const glm::vec3& axis)
 }
 void Model::SetPosition(const glm::vec3& position)
 {
+    glm::vec3 deltaPos = position-m_position;
     m_position = position;
-    UpdateBoundingBox();
+    UpdateBoundingBox(deltaPos);
 }
 void Model::loadModel(string const& path)
 {
@@ -124,6 +125,25 @@ void Model::processNode(aiNode* node, const aiScene* scene)
         processNode(node->mChildren[i], scene);
     }
 
+}
+void Model::Move(glm::vec3& newPos)
+{
+    // Calculate the movement offset based on the change in mouse position
+    float deltaX = newPos.x - m_position.x;
+    float deltaY = newPos.y - m_position.y;
+    float deltaZ = newPos.z - m_position.z;
+
+    // Adjust the movement sensitivity
+    float sensitivity = 0.1f;
+    deltaX *= sensitivity;
+    deltaY *= sensitivity;
+    deltaZ *= sensitivity;
+
+    // Move the object
+    m_position.x += deltaX;
+    m_position.y += deltaY; // Invert the y-axis if needed
+    m_position.z += deltaZ;
+  //  UpdateBoundingBox();
 }
 
 Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
@@ -360,9 +380,9 @@ void Model::ComputeBoundingBox()
     m_modelBounds.setMaxBound(maxBound_temp);
 }
 
-void Model::UpdateBoundingBox()
+void Model::UpdateBoundingBox(glm::vec3 deltaPos)
 {
-    m_modelBounds.Move(m_position);
+    m_modelBounds.Move(deltaPos);
 }
 
 void Model::SetScale(glm::vec3 scale)

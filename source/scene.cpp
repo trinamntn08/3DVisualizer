@@ -1,7 +1,5 @@
 #include"scene.h"
 
-const std::string cubePath = std::string("source/resources/cube/cube.gltf");
-const std::string spiderPath = std::string("source/resources/spider/spider.obj");
 
 Scene::Scene()
 {
@@ -11,9 +9,27 @@ void Scene::loadScene()
 {
     InitializeCubes(cubePath);
     CalculateSceneBounds();
-    m_spider = Model(spiderPath, glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(0.05f));
-    UpdateSpiderPosition();
+    m_spider = Model(spiderPath, glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(0.02f));
+    m_ball = Model(ballPath, glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(1.f));
+    UpdateModelToFitScene(m_spider);
+    UpdateModelToFitScene(m_ball);
     m_cubemap = InitializeCubemap();
+
+}
+
+std::vector<Model*> Scene::AllObjects()
+{
+    std::vector<Model*> allObjects;
+    allObjects.push_back(&m_spider);
+    allObjects.push_back(&m_ball);
+
+    return allObjects;
+}
+void Scene::OnUpdate(float deltaTime)
+{
+    glm::vec3 rotateAxis(0.0f, 0.0f, -1.0f);
+    m_ball.RotateOverTime(deltaTime, rotateAxis);
+    m_ball.OnMove(deltaTime);
 }
 
 void Scene::InitializeCubes(const std::string &filePath)
@@ -23,7 +39,7 @@ void Scene::InitializeCubes(const std::string &filePath)
     Model cubeModel(filePath);
     int numRows = 20; 
     int numCols = 20; 
-    float spacing = 2.0f; // Spacing between cubes
+    float spacing = 2.5f; // Spacing between cubes
 
     // Create cubes arranged in a square grid
     for (int row = 0; row < numRows; row++) {
@@ -45,22 +61,20 @@ void Scene::CalculateSceneBounds()
         m_sceneBounds.ExpandToInclude(cubeBounds);
     }
 }
-
-void Scene::UpdateSpiderPosition()
+void Scene::UpdateModelToFitScene(Model& model)
 {
     // Move spider to center of scene
     glm::vec3 sceneBoundsCenter = m_sceneBounds.GetCenter();
-    BoundingBox spider_bbox = m_spider.GetBoundingBox();
-    glm::vec3 spiderBoundsCenter = spider_bbox.GetCenter();
-    glm::vec3 spiderMove = sceneBoundsCenter - spiderBoundsCenter;
+    const BoundingBox& model_bbox = model.GetBoundingBox();
+    glm::vec3 bboxCenter = model_bbox.GetCenter();
+    glm::vec3 modelMove = sceneBoundsCenter - bboxCenter;
 
     // Adjust the y-axis of spider to move it above the scene
-    float yOffset = m_sceneBounds.GetMaxBounds().y - spider_bbox.GetMinBounds().y;
-    spiderMove.y = yOffset;
+    float yOffset = m_sceneBounds.GetMaxBounds().y - model_bbox.GetMinBounds().y;
+    modelMove.y = yOffset;
 
-    m_spider.SetPosition(spiderMove);
+    model.SetPosition(modelMove);
 }
-
 void Scene::RenderObjects(Shader& shader)
 {
     shader.activate();
@@ -68,14 +82,17 @@ void Scene::RenderObjects(Shader& shader)
     {
         cube.Render(shader);
     }
-     //m_sceneBounds.Render(shader);
+    //m_sceneBounds.Render(shader);
 
-   // Render spider and its boundingBox
+    // Render spider and its boundingBox
     m_spider.Render(shader);
 
     /*BoundingBox spider_Bounds = m_spider.GetBoundingBox();
     spider_Bounds.Render(shader);*/
 
+    m_ball.Render(shader);
+    /*BoundingBox bbox_ball = m_ball.GetBoundingBox();
+    bbox_ball.Render(shader);*/
 }
 void Scene::RenderCubeMap(Shader& shader_cubemap)
 {
@@ -159,7 +176,7 @@ Mesh Scene::InitializeCubemap()
     const std::string back("back.png");
 
     std::vector<std::string> textures_faces;
-    textures_faces.push_back(directory+right);
+    textures_faces.push_back(directory + right);
     textures_faces.push_back(directory + left);
     textures_faces.push_back(directory + top);
     textures_faces.push_back(directory + bottom);
@@ -217,3 +234,43 @@ std::vector<Texture> LoadCubeMapTextures(std::vector<std::string> textures_faces
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
     return textures_loaded;
 }
+
+void Scene::handleCollision()
+{
+    const BoundingBox& bbox_spider = m_spider.GetBoundingBox();
+    // Calculate the displacement vector needed to push the object back
+    glm::vec3 displacement = glm::vec3(0.0f);
+
+    // Adjust the displacement based on the axis of collision
+    if (bbox_spider.GetMinBounds().x > m_sceneBounds.GetMinBounds().x && 
+        bbox_spider.GetMinBounds().x < m_sceneBounds.GetMaxBounds().x) 
+    {
+        displacement.x = (m_sceneBounds.GetMaxBounds().x - bbox_spider.GetMinBounds().x) > (m_sceneBounds.GetMaxBounds().x - bbox_spider.GetMinBounds().x) ?
+                          (m_sceneBounds.GetMaxBounds().x - m_sceneBounds.GetMinBounds().x) : 
+                         -(m_sceneBounds.GetMaxBounds().x - bbox_spider.GetMinBounds().x);
+    }
+
+    if (bbox_spider.GetMinBounds().y > m_sceneBounds.GetMinBounds().y &&
+        bbox_spider.GetMinBounds().y < m_sceneBounds.GetMaxBounds().y)
+    {
+        displacement.y = (m_sceneBounds.GetMaxBounds().y - bbox_spider.GetMinBounds().y) > (m_sceneBounds.GetMaxBounds().y - bbox_spider.GetMinBounds().y) ?
+                         (m_sceneBounds.GetMaxBounds().y - m_sceneBounds.GetMinBounds().y) :
+                        -(m_sceneBounds.GetMaxBounds().y - bbox_spider.GetMinBounds().y);
+    }
+
+    if (bbox_spider.GetMinBounds().z > m_sceneBounds.GetMinBounds().z &&
+        bbox_spider.GetMinBounds().z < m_sceneBounds.GetMaxBounds().z)
+    {
+        displacement.z = (m_sceneBounds.GetMaxBounds().z - bbox_spider.GetMinBounds().z) > (m_sceneBounds.GetMaxBounds().z - bbox_spider.GetMinBounds().z) ?
+            (m_sceneBounds.GetMaxBounds().z - m_sceneBounds.GetMinBounds().z) :
+            -(m_sceneBounds.GetMaxBounds().z - bbox_spider.GetMinBounds().z);
+    }
+
+    // Apply the displacement to push the object back
+    glm::vec3 newPos = m_spider.m_position + displacement;
+    m_spider.SetPosition(newPos);
+
+    std::cout << "Collision detected! Object pushed back." << std::endl;
+}
+
+

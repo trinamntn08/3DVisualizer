@@ -1,6 +1,6 @@
 #include"mesh.h"
 
-Mesh::Mesh():VAO(0) 
+Mesh::Mesh():VAO(0), VBO(0),EBO(0)
 {
     // Initialize other data members
     vertices.clear();

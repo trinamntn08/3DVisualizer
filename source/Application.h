@@ -38,8 +38,8 @@ public:
 
 	void DisplayFPS(float currentTime);
 
-	void MoveObject();
-	bool RayIntersectsBoundingBox(glm::vec2 &mousePos, glm::vec3& intersectPoint);
+	void MoveObjects();
+	bool RayIntersectsBoundingBox(glm::vec2 &mousePos,const BoundingBox& bbox, glm::vec3& intersectPoint);
 	bool RayIntersectsBoundingBox(const Ray& ray, const BoundingBox& bbox,glm::vec3& intersectPts);
 
 

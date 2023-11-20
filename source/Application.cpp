@@ -50,7 +50,6 @@ void Application::Init()
         Application* instance = static_cast<Application*>(glfwGetWindowUserPointer(window));
         instance->m_spec.height = height;
         instance->m_spec.width = width;
-        
     });
 
     glfwSetScrollCallback(m_window, [](GLFWwindow* window, double xoffset, double yoffset) 
@@ -80,7 +79,6 @@ void Application::Init()
     // capture mouse
     glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 
-
     glfwMakeContextCurrent(m_window);
     // glad: load all OpenGL function pointers
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
@@ -105,7 +103,6 @@ void Application::Run()
     m_scene.loadScene();
     m_camera.LookAtBoundingBox(m_scene.getSceneBounds());
 
-
     // render loop
     while (!glfwWindowShouldClose(m_window))
     {
@@ -114,25 +111,26 @@ void Application::Run()
         m_frameTime = currentFrame - m_lastFrameTime;
 
         DisplayFPS(currentFrame);
-        MoveObject();
+        MoveObjects();
         m_camera.OnUpdate(m_window, m_frameTime);
 
+        m_scene.OnUpdate(m_frameTime);
+       
         // render
         glClearColor(0.08f, 0.16f, 0.18f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glEnable(GL_DEPTH_TEST);
 
-        // enable shader before setting uniforms
+        // enable shader befsore setting uniforms
         m_shader_scene.activate();
 
-        // view/projection matrix
+        // Render Scene's Objects
         glm::mat4 model = glm::mat4(1.0f);
         glm::mat4 view = m_camera.GetViewMatrix();
         glm::mat4 projection = m_camera.GetProjectionMatrix();
         m_shader_scene.setMat_MVP(model, view, projection);
 
-        // Render Scene's Objects
         m_scene.RenderObjects(m_shader_scene);
 
         // Render Cubemap
@@ -142,10 +140,8 @@ void Application::Run()
         glm::mat4 model_cubemap = glm::mat4(1.0f);
         glm::mat4 view_cubemap = m_camera.GetViewMatrix();
         glm::mat4 projection_cubemap = m_camera.GetProjectionMatrix();
-    //    view_cubemap = glm::mat4(glm::mat3(glm::lookAt(m_camera.GetPosition(), m_camera.GetPosition() + m_camera.GetDirection(), glm::vec3(0, 1, 0))));
-    //    projection_cubemap = glm::perspective(glm::radians(45.0f), (float)m_spec.width / m_spec.height, 0.1f, 100.0f);
-
         m_shader_cubemap.setMat_MVP(model_cubemap, view_cubemap, projection_cubemap);
+
         m_scene.RenderCubeMap(m_shader_cubemap);
 
         glDepthFunc(GL_LESS);
@@ -188,7 +184,73 @@ void Application::DisplayFPS(float currentFrame)
     }
 }
 
-bool Application::RayIntersectsBoundingBox(glm::vec2& mousePos, glm::vec3& intersectPoint)
+void Application::MoveObjects()
+{
+    static bool isObjectGrabbed = false;
+    static glm::vec3 grabOffset;
+    static Model* grabbedObject = nullptr; // Track the currently grabbed object
+
+    // Click on objects
+    if (m_mouseHandler.leftButton.isLeftPressed)
+    {
+        // Get mouse cursor position
+        double mouseX, mouseY;
+        glfwGetCursorPos(m_window, &mouseX, &mouseY);
+        glm::vec2 mousePosition((float)mouseX, (float)mouseY);
+
+        for (Model* item : m_scene.AllObjects())
+        {
+            glm::vec3 intersectPoint;
+            bool hit = RayIntersectsBoundingBox(mousePosition, item->GetBoundingBox(), intersectPoint);
+
+            if (hit)
+            {
+                std::cout << "Bounding Box Clicked! " << std::endl;
+                if (!isObjectGrabbed)
+                {
+                    // Grab the object on the first press
+                    isObjectGrabbed = true;
+                    grabOffset = intersectPoint - item->m_position;
+                    grabbedObject = item;
+                }
+
+                if (isObjectGrabbed && grabbedObject == item)
+                {
+                    // Set the speed at which the object moves
+                    float moveSpeed = 0.1f;
+
+                    const BoundingBox& bbox_item = item->GetBoundingBox();
+
+                    // Check for collisions with other objects in the scene
+                    bool collisionDetected = BoundingBox::CheckCollision(bbox_item, m_scene.getSceneBounds());
+
+                    if (collisionDetected)
+                    {
+                        std::cout << "Collision detected!" << std::endl;
+                        // m_scene.hanldeCollision();
+                    }
+                    // Move the object only if it's grabbed
+
+                    glm::vec3 movePos(intersectPoint.x - grabOffset.x,
+                                      intersectPoint.y - grabOffset.y,
+                                      intersectPoint.z - grabOffset.z);
+                    // Ensure the object stays above the scene
+                    float minY = m_scene.getSceneBounds().GetMaxBounds().y + item->GetBoundingBox().GetDimensions().y / 2.0f;
+                    movePos.y = std::max(movePos.y, minY);
+                    item->SetPosition(movePos);   
+                }
+            }
+        }
+
+        
+    }
+    else
+    {
+        // Reset isObjectGrabbed when the left mouse button is released
+        isObjectGrabbed = false;
+    }
+}
+bool Application::RayIntersectsBoundingBox(glm::vec2& mousePos,const BoundingBox& bbox, glm::vec3& intersectPoint)
 {
     // Convert mouse position to normalized device coordinates (NDC)
     float ndcX = (2.0f * mousePos.x) / m_camera.GetViewPortWidth() - 1.0f;
@@ -215,7 +277,6 @@ bool Application::RayIntersectsBoundingBox(glm::vec2& mousePos, glm::vec3& inter
     ray.Origin = glm::vec3(nearPointView);
     ray.Direction = glm::normalize(glm::vec3(farPointView - nearPointView));
 
-    BoundingBox bbox = m_scene.getSpider().GetBoundingBox();
     bool hit =  RayIntersectsBoundingBox(ray, bbox, intersectPoint);
     return hit;
 }
@@ -261,56 +322,6 @@ bool Application::RayIntersectsBoundingBox(const Ray& ray, const BoundingBox& bb
     return true;
 }
 
-void Application::MoveObject()
-{
-    static bool isObjectGrabbed = false;
-    static glm::vec3 grabOffset;
-    // Click on objects
-    if (m_mouseHandler.leftButton.isLeftPressed)
-    {
-        // Get mouse cursor position
-        double mouseX, mouseY;
-        glfwGetCursorPos(m_window, &mouseX, &mouseY);
-        glm::vec2 mousePosition((float)mouseX, (float)mouseY);
-        glm::vec3 intersectPoint;
-        bool hit = RayIntersectsBoundingBox(mousePosition, intersectPoint);
 
-        if (hit)
-        {
-            std::cout << "Bounding Box Clicked! " << std::endl;
-            if (!isObjectGrabbed)
-            {
-                // Grab the object on the first press
-                isObjectGrabbed = true;
-                grabOffset = intersectPoint - m_scene.getSpider().m_position;
-            }
 
-            if(isObjectGrabbed)
-            {
-                BoundingBox bbox_spider = m_scene.getSpider().GetBoundingBox();
-
-                // Check for collisions with other objects in the scene
-                bool collisionDetected = bbox_spider.CheckCollision(m_scene.getSceneBounds());
-
-                if (!collisionDetected)
-                {
-                    // Move the object only if it's grabbed and there are no collisions
-                    glm::vec3 movePos(intersectPoint.x - grabOffset.x, intersectPoint.y - grabOffset.y, intersectPoint.z - grabOffset.z);
-                    m_scene.getSpider().SetPosition(movePos);
-                }
-                else
-                {
-                    glm::vec3 movePos(intersectPoint.x - grabOffset.x, m_scene.getSceneBounds().GetMaxBounds().y, intersectPoint.z - grabOffset.z);
-                    m_scene.getSpider().SetPosition(movePos);
-                    std::cout << "Collision detected!" << std::endl;
-                }
-            }
-        }
-    }
-    else
-    {
-        // Reset isObjectGrabbed when the left mouse button is released
-        isObjectGrabbed = false;
-    }
-}
 

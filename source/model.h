@@ -30,12 +30,13 @@ public:
     // model data 
     std::vector<Texture> textures_loaded;	// stores all the textures loaded so far, optimization to make sure textures aren't loaded more than once.
     std::vector<Mesh>    meshes;
-    string directory;
+    std::string directory;
     glm::vec3 m_position= glm::vec3(0.0f);
     glm::vec3 m_rotation = glm::vec3(0.0f);
     glm::vec3 m_scale = glm::vec3(1.0f);
     bool gammaCorrection=true;
     BoundingBox m_modelBounds;
+
     Model();
     // constructor, expects a filepath to a 3D model.
     Model(string const& path, const glm::vec3& pos = glm::vec3(0.0f), const glm::vec3& rot = glm::vec3(0.0f),
@@ -47,20 +48,20 @@ public:
 
     // draws the model, and thus all its meshes
     void Render(Shader& shader);
-    void Rotate(Shader& shader, float angle, const glm::vec3& axis);
-    // Set the position of the model
+    // Manipulation
+    void Rotate(Shader& shader, float angle, const glm::vec3& rotateAxis);
+    void RotateOverTime(float deltaTime,const glm::vec3& rotateAxis);
+
     void SetPosition(const glm::vec3& position);
-
     void SetScale(glm::vec3 scale);
-
     const glm::vec3& GetScale() const;
-
+    
+    // Bounding box
     void ComputeBoundingBox(); // initialization
     void UpdateBoundingBox(glm::vec3 deltaPos); // update when event changed
-
     const BoundingBox& GetBoundingBox() const ;
 
-    void Move(glm::vec3& newPos);
+    void OnMove(float deltaTime);
 
 private:
     // loads a model with supported ASSIMP extensions from file and stores the resulting meshes in the meshes vector.

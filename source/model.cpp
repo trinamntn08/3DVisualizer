@@ -1,10 +1,10 @@
 #include"model.h"
-
-Model::Model(): gammaCorrection(true), directory(""), m_position(0.0f), m_rotation(0.0f), m_scale(1.0f)
+#include <glm/gtx/euler_angles.hpp>
+Model::Model():gammaCorrection(true), directory(""), m_position(0.0f), m_rotation(0.0f), m_scale(1.0f)
 {
     m_modelBounds.Reset();
 }
-Model::Model(string const& path, const glm::vec3& pos, const glm::vec3& rot, glm::vec3 scale, bool gamma) :
+Model::Model( string const& path, const glm::vec3& pos, const glm::vec3& rot, glm::vec3 scale, bool gamma) :
     m_position(pos), m_rotation(glm::radians(rot)), m_scale(scale), gammaCorrection(gamma)
 {
     loadModel(path);
@@ -77,13 +77,24 @@ void Model::Render(Shader& shader)
         meshes[i].Render(shader);
 }
 
-void Model::Rotate(Shader& shader, float angle, const glm::vec3& axis)
+void Model::Rotate(Shader& shader, float angle, const glm::vec3& rotateAxis)
 {
     // Create a rotation matrix
     glm::mat4 model = glm::mat4(1.0f);
-    glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), angle, axis);
+    glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), angle, rotateAxis);
     model = rotation * model;
     shader.setMat4("model", model);
+}
+void Model::RotateOverTime(float deltaTime, const glm::vec3& rotateAxis)
+{
+    // Accumulate the elapsed time
+    static float accumulatedTime = 0.0f;
+    accumulatedTime += deltaTime;
+
+    static float rotationSpeed = 30.0f;
+    // Calculate the rotation angle based on time and speed
+    float rotationAngle = glm::radians(rotationSpeed * accumulatedTime);
+    m_rotation = rotationAngle* rotateAxis;
 }
 void Model::SetPosition(const glm::vec3& position)
 {
@@ -126,24 +137,14 @@ void Model::processNode(aiNode* node, const aiScene* scene)
     }
 
 }
-void Model::Move(glm::vec3& newPos)
+void Model::OnMove(float deltaTime)
 {
-    // Calculate the movement offset based on the change in mouse position
-    float deltaX = newPos.x - m_position.x;
-    float deltaY = newPos.y - m_position.y;
-    float deltaZ = newPos.z - m_position.z;
-
-    // Adjust the movement sensitivity
-    float sensitivity = 0.1f;
-    deltaX *= sensitivity;
-    deltaY *= sensitivity;
-    deltaZ *= sensitivity;
-
-    // Move the object
-    m_position.x += deltaX;
-    m_position.y += deltaY; // Invert the y-axis if needed
-    m_position.z += deltaZ;
-  //  UpdateBoundingBox();
+    const float speed =0.5f;
+    float horizontalMovement = speed * deltaTime;
+    glm::vec3 newPos = m_position ;
+    newPos.x += horizontalMovement;
+    // Set the new position for the spider
+    SetPosition(newPos);
 }
 
 Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)

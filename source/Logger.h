@@ -30,9 +30,10 @@ public:
 private:
     static void log(LogLevel level, const std::string& message) {
         std::time_t now = std::time(nullptr);
-        std::tm* tm_info = std::localtime(&now);
+        std::tm tm_info;
+        localtime_s(&tm_info, &now);
         char timestamp[20];
-        strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", tm_info);
+        strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", &tm_info);
 
         std::cout << "[" << timestamp << "] ";
 

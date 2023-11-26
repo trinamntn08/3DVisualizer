@@ -1,5 +1,5 @@
 #include "Application.h"
-
+#include"Logger.h"
 
 Application* CreateApplication()
 {
@@ -188,7 +188,7 @@ void Application::MoveObjects()
 {
     static bool isObjectGrabbed = false;
     static glm::vec3 grabOffset;
-    static Model* grabbedObject = nullptr; // Track the currently grabbed object
+    static Entity* grabbedObject = nullptr; // Track the currently grabbed object
 
     // Click on objects
     if (m_mouseHandler.leftButton.isLeftPressed)
@@ -198,19 +198,19 @@ void Application::MoveObjects()
         glfwGetCursorPos(m_window, &mouseX, &mouseY);
         glm::vec2 mousePosition((float)mouseX, (float)mouseY);
 
-        for (Model* item : m_scene.AllObjects())
+        for (Entity* item : m_scene.AllObjects())
         {
             glm::vec3 intersectPoint;
             bool hit = RayIntersectsBoundingBox(mousePosition, item->GetBoundingBox(), intersectPoint);
 
             if (hit)
             {
-                std::cout << "Bounding Box Clicked! " << std::endl;
+                Log::info("Bounding Box Clicked!");
                 if (!isObjectGrabbed)
                 {
                     // Grab the object on the first press
                     isObjectGrabbed = true;
-                    grabOffset = intersectPoint - item->m_position;
+                    grabOffset = intersectPoint - item->GetPosition();
                     grabbedObject = item;
                 }
 
@@ -226,18 +226,22 @@ void Application::MoveObjects()
 
                     if (collisionDetected)
                     {
-                        std::cout << "Collision detected!" << std::endl;
-                        // m_scene.hanldeCollision();
+                        Log::info("Collision Detected !!!");
                     }
-                    // Move the object only if it's grabbed
 
-                    glm::vec3 movePos(intersectPoint.x - grabOffset.x,
+                    glm::vec3 newPos(intersectPoint.x - grabOffset.x,
                                       intersectPoint.y - grabOffset.y,
                                       intersectPoint.z - grabOffset.z);
+
                     // Ensure the object stays above the scene
-                    float minY = m_scene.getSceneBounds().GetMaxBounds().y + item->GetBoundingBox().GetDimensions().y / 2.0f;
-                    movePos.y = std::max(movePos.y, minY);
-                    item->SetPosition(movePos);   
+                    float minY = m_scene.getSceneBounds().GetMaxBounds().y + bbox_item.GetDimensions().y / 2.0f;
+                    newPos.y = std::max(newPos.y, minY);
+                 //   movePos.y = minY;
+                    Log::info("Object Pos: " + std::to_string(item->GetPosition().x) + " " +
+                        std::to_string(item->GetPosition().y) + " " +
+                        std::to_string(item->GetPosition().z));
+                    item->SetPosition(newPos);
+
                 }
             }
         }
@@ -320,6 +324,26 @@ bool Application::RayIntersectsBoundingBox(const Ray& ray, const BoundingBox& bb
     intersectPts = ray.Origin + tmin * ray.Direction;
 
     return true;
+}
+
+bool Application::RayIntersectsPlane(const Ray& ray, Plane& plane, glm::vec3& intersectPts)
+{
+    // Check if the ray and plane are not parallel
+    float denom = glm::dot(ray.Direction , plane.normal);
+    if (std::abs(denom) > 1e-6)
+    {
+        // Calculate the parameter along the ray where it intersects the plane
+        float t = glm::dot(plane.point - ray.Origin, plane.normal) / denom;
+
+        // Check if the intersection point is in front of the ray origin
+        if (t >= 0.0f)
+        {
+            intersectPts = ray.Origin + t * ray.Direction;
+            return true;
+        }
+    }
+    // No intersection
+    return false;
 }
 
 

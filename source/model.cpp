@@ -1,35 +1,31 @@
 #include"model.h"
 #include <glm/gtx/euler_angles.hpp>
-Model::Model():gammaCorrection(true), directory(""), m_position(0.0f), m_rotation(0.0f), m_scale(1.0f)
+
+Model::Model():gammaCorrection(true), directory("")
 {
-    m_modelBounds.Reset();
 }
-Model::Model( string const& path, const glm::vec3& pos, const glm::vec3& rot, glm::vec3 scale, bool gamma) :
-    m_position(pos), m_rotation(glm::radians(rot)), m_scale(scale), gammaCorrection(gamma)
+
+Model::Model(const std::string& path, bool gamma):gammaCorrection(gamma)
 {
     loadModel(path);
-    ComputeBoundingBox();
 }
+
 Model::Model(const Model& other)
 {
     // Perform a deep copy of textures_loaded
     for (const Texture& texture : other.textures_loaded) {
         textures_loaded.push_back(texture);
     }
-
     // Perform a deep copy of meshes
     for (const Mesh& mesh : other.meshes) {
         meshes.push_back(mesh);
     }
-
     // Copy other data members
     directory = other.directory;
     gammaCorrection = other.gammaCorrection;
-    m_position = other.m_position;
-    m_rotation = other.m_rotation;
-    m_modelBounds = other.m_modelBounds;
 }
-Model& Model::operator=(const Model& other) {
+Model& Model::operator=(const Model& other) 
+{
     if (this == &other) {
         return *this; // Self-assignment guard
     }
@@ -51,57 +47,9 @@ Model& Model::operator=(const Model& other) {
     // Copy other data members
     directory = other.directory;
     gammaCorrection = other.gammaCorrection;
-    m_position = other.m_position;
-    m_rotation = other.m_rotation;
-    m_scale = other.m_scale;
-    m_modelBounds = other.m_modelBounds;
     return *this;
 }
-void Model::Render(Shader& shader)
-{
-    // Update the model matrix based on the position
-    glm::mat4 modelMatrix = glm::mat4(1.0f);
 
-    //Apply transtion 
-    modelMatrix = glm::translate(modelMatrix, m_position);
-    // Apply rotation
-    modelMatrix = glm::rotate(modelMatrix, m_rotation.z, glm::vec3(0, 0, 1));
-    modelMatrix = glm::rotate(modelMatrix, m_rotation.y, glm::vec3(0, 1, 0));
-    modelMatrix = glm::rotate(modelMatrix, m_rotation.x, glm::vec3(1, 0, 0));
-    // Apply scaling 
-    modelMatrix = glm::scale(modelMatrix, m_scale);
-    
-    shader.setMat4("model", modelMatrix);
-
-    for (unsigned int i = 0; i < meshes.size(); i++)
-        meshes[i].Render(shader);
-}
-
-void Model::Rotate(Shader& shader, float angle, const glm::vec3& rotateAxis)
-{
-    // Create a rotation matrix
-    glm::mat4 model = glm::mat4(1.0f);
-    glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), angle, rotateAxis);
-    model = rotation * model;
-    shader.setMat4("model", model);
-}
-void Model::RotateOverTime(float deltaTime, const glm::vec3& rotateAxis)
-{
-    // Accumulate the elapsed time
-    static float accumulatedTime = 0.0f;
-    accumulatedTime += deltaTime;
-
-    static float rotationSpeed = 30.0f;
-    // Calculate the rotation angle based on time and speed
-    float rotationAngle = glm::radians(rotationSpeed * accumulatedTime);
-    m_rotation = rotationAngle* rotateAxis;
-}
-void Model::SetPosition(const glm::vec3& position)
-{
-    glm::vec3 deltaPos = position-m_position;
-    m_position = position;
-    UpdateBoundingBox(deltaPos);
-}
 void Model::loadModel(string const& path)
 {
     // read file via ASSIMP
@@ -119,7 +67,11 @@ void Model::loadModel(string const& path)
     // process ASSIMP's root node recursively
     processNode(scene->mRootNode, scene);
 }
-
+void Model::Render(Shader& shader)
+{
+    for (unsigned int i = 0; i < meshes.size(); i++)
+        meshes[i].Render(shader);
+}
 void Model::processNode(aiNode* node, const aiScene* scene)
 {
     // process each mesh located at the current node
@@ -136,15 +88,6 @@ void Model::processNode(aiNode* node, const aiScene* scene)
         processNode(node->mChildren[i], scene);
     }
 
-}
-void Model::OnMove(float deltaTime)
-{
-    const float speed =0.5f;
-    float horizontalMovement = speed * deltaTime;
-    glm::vec3 newPos = m_position ;
-    newPos.x += horizontalMovement;
-    // Set the new position for the spider
-    SetPosition(newPos);
 }
 
 Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
@@ -308,93 +251,3 @@ unsigned int TextureFromFile(const char* path, const string& directory, bool gam
     return textureID;
 }
 
-unsigned int TextureForSkyFromFile(const char* path, const string& directory, bool gamma)
-{
-    string filename = string(path);
-    filename = directory + '/' + filename;
-
-    unsigned int textureID;
-    glGenTextures(1, &textureID);
-
-    int width, height, nrComponents;
-    unsigned char* data = stbi_load(filename.c_str(), &width, &height, &nrComponents, 0);
-    if (data)
-    {
-        GLenum format;
-        if (nrComponents == 1)
-            format = GL_RED;
-        else if (nrComponents == 3)
-            format = GL_RGB;
-        else if (nrComponents == 4)
-            format = GL_RGBA;
-
-        glBindTexture(GL_TEXTURE_2D, textureID);
-        glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
-        glGenerateMipmap(GL_TEXTURE_2D);
-
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-        stbi_image_free(data);
-    }
-    else
-    {
-        std::cout << "Texture failed to load at path: " << path << std::endl;
-        stbi_image_free(data);
-    }
-
-    return textureID;
-}
-void Model::ComputeBoundingBox()
-{
-    if (meshes.empty()) 
-    {
-        return;
-    }
-    m_modelBounds.Reset();
-    // Initialize temporary bounds with the position of the first vertex
-    glm::vec3 minBound_temp = meshes[0].vertices[0].Position + m_position;
-    glm::vec3 maxBound_temp = minBound_temp;
-
-    // Iterate over each mesh within the model
-    for (const Mesh& mesh : meshes) 
-    {
-        // Iterate over each vertex within the mesh
-        for (const Vertex& vertex : mesh.vertices) 
-        {
-            // Apply the model's position to the vertex
-            glm::vec3 vertexPosition = vertex.Position  + m_position;
-
-            // Update the temporary bounds more efficiently
-            minBound_temp = glm::min(minBound_temp, vertexPosition);
-            maxBound_temp = glm::max(maxBound_temp, vertexPosition);
-        }
-    }
-
-    // Update the model's bounding box with scale
-    minBound_temp *= m_scale;
-    maxBound_temp *= m_scale;
-
-    m_modelBounds.setMinBound(minBound_temp);
-    m_modelBounds.setMaxBound(maxBound_temp);
-}
-
-void Model::UpdateBoundingBox(glm::vec3 deltaPos)
-{
-    m_modelBounds.Move(deltaPos);
-}
-
-void Model::SetScale(glm::vec3 scale)
-{
-    m_scale = scale;
-}
-const glm::vec3& Model::GetScale() const
-{
-    return m_scale;
-}
-const BoundingBox& Model::GetBoundingBox() const
-{
-    return m_modelBounds;
-}

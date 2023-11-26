@@ -12,35 +12,26 @@
 
 #include "mesh.h"
 #include "shader.h"
-#include"boundingBox.h"
 
-#include <string>
 #include <fstream>
 #include <sstream>
 #include <iostream>
 #include <map>
 #include <vector>
 
-unsigned int TextureFromFile(const char* path, const string& directory, bool gamma=true);
-unsigned int TextureForSkyFromFile(const char* path, const string& directory, bool gamma);
+static unsigned int TextureFromFile(const char* path, const std::string& directory, bool gamma=true);
 
 class Model 
 {
 public:
-    // model data 
     std::vector<Texture> textures_loaded;	// stores all the textures loaded so far, optimization to make sure textures aren't loaded more than once.
     std::vector<Mesh>    meshes;
     std::string directory;
-    glm::vec3 m_position= glm::vec3(0.0f);
-    glm::vec3 m_rotation = glm::vec3(0.0f);
-    glm::vec3 m_scale = glm::vec3(1.0f);
-    bool gammaCorrection=true;
-    BoundingBox m_modelBounds;
+    bool gammaCorrection = true;
 
     Model();
-    // constructor, expects a filepath to a 3D model.
-    Model(string const& path, const glm::vec3& pos = glm::vec3(0.0f), const glm::vec3& rot = glm::vec3(0.0f),
-           glm::vec3 scale = glm::vec3(1.0f), bool gamma = true);
+    Model(const std::string& path, bool gamma = true) ;
+
     // Copy constructor
     Model(const Model& other);
     // Copy assignment operator
@@ -48,20 +39,6 @@ public:
 
     // draws the model, and thus all its meshes
     void Render(Shader& shader);
-    // Manipulation
-    void Rotate(Shader& shader, float angle, const glm::vec3& rotateAxis);
-    void RotateOverTime(float deltaTime,const glm::vec3& rotateAxis);
-
-    void SetPosition(const glm::vec3& position);
-    void SetScale(glm::vec3 scale);
-    const glm::vec3& GetScale() const;
-    
-    // Bounding box
-    void ComputeBoundingBox(); // initialization
-    void UpdateBoundingBox(glm::vec3 deltaPos); // update when event changed
-    const BoundingBox& GetBoundingBox() const ;
-
-    void OnMove(float deltaTime);
 
 private:
     // loads a model with supported ASSIMP extensions from file and stores the resulting meshes in the meshes vector.

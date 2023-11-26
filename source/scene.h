@@ -1,6 +1,5 @@
 #pragma once
-#include"model.h"
-#include"boundingBox.h"
+#include"Entity.h"
 
 const std::string cubePath = std::string("source/resources/cube/cube.gltf");
 const std::string spiderPath = std::string("source/resources/spider/spider.obj");
@@ -16,18 +15,18 @@ public:
     void OnUpdate(float deltaTime);
 
     // Render scene
-    void RenderObjects(Shader& shader);
+    void RenderObjects(Shader& shader,bool render_BBoxes=false);
     void RenderCubeMap(Shader& shader_cubemap);
 
     void InitializeCubes(const std::string& filePath);
-    std::vector<Model>& getCubes(){ return m_cubes;}
+    std::vector<Entity*>& getCubes(){ return m_cubes;}
 
-    Model& getSpider() { return m_spider;}
+    Entity* getSpider() { return m_spider;}
 
-    void UpdateModelToFitScene(Model& model);
-    Model& getBall() { return m_ball; }
+    void UpdateEntityToFitScene(Entity& entity);
+    Entity* getBall() { return m_ball; }
 
-    Mesh InitializeCubemap();
+    Mesh* InitializeCubemap();
 
     // bounding box
     void CalculateSceneBounds();
@@ -35,14 +34,14 @@ public:
 
     void handleCollision();
 
-    std::vector<Model*> AllObjects();
+    std::vector<Entity*> AllObjects();
 
 
 
 private:
-    std::vector<Model> m_cubes;
-    Model m_spider;
-    Model m_ball;
+    std::vector<Entity*> m_cubes;
+    Entity* m_spider;
+    Entity* m_ball;
     BoundingBox m_sceneBounds;
-    Mesh m_cubemap;
+    Mesh* m_cubemap;
 };

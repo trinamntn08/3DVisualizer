@@ -9,7 +9,6 @@
 
 #include"shader.h"
 #include"camera.h"
-#include"model.h"
 #include"scene.h"
 #include"pickingTexture.h" // Not used yet
 #include"mousePicker.h" // Not used yet
@@ -22,6 +21,8 @@ struct AppSpecification
 	unsigned int height = 900;
 
 };
+
+
 
 class Application
 {
@@ -42,6 +43,7 @@ public:
 	bool RayIntersectsBoundingBox(glm::vec2 &mousePos,const BoundingBox& bbox, glm::vec3& intersectPoint);
 	bool RayIntersectsBoundingBox(const Ray& ray, const BoundingBox& bbox,glm::vec3& intersectPts);
 
+	bool RayIntersectsPlane(const Ray& ray, Plane& plane, glm::vec3& intersectPts);
 
 private:
 	AppSpecification m_spec;
@@ -58,10 +60,8 @@ private:
 	//Shaders
 	Shader m_shader_scene;
 	Shader m_shader_cubemap;
-	//Camera
-	Camera m_camera;
 
-	// Scene
+	Camera m_camera;
 	Scene m_scene;
 
 	// Mouse

@@ -8,27 +8,6 @@ BoundingBox::BoundingBox()
     m_maxBounds = glm::vec3(std::numeric_limits<float>::lowest());
 }
 
-//void BoundingBox::ExpandToFit(const Model& model)
-//{
-//    // Initialize the bounds using the first vertex of the first mesh
-//    if (model.meshes.empty() || model.meshes[0].vertices.empty()) {
-//        return;
-//    }
-//
-//    // Iterate over each mesh within the model
-//    for (const Mesh& mesh : model.meshes) {
-//        // Iterate over each vertex within the mesh
-//        for (const Vertex& vertex : mesh.vertices) {
-//            // Apply the model's position to the vertex
-//            glm::vec3 vertexPosition = vertex.Position + model.m_position;
-//
-//            // Expand the bounds to fit the transformed vertex
-//            m_minBounds = glm::min(m_minBounds, vertexPosition);
-//            m_maxBounds = glm::max(m_maxBounds, vertexPosition);
-//        }
-//    }
-//}
-
 glm::vec3 BoundingBox::GetCenter() const
 {
     return 0.5f * (m_minBounds + m_maxBounds);
@@ -121,7 +100,6 @@ void BoundingBox::Render(Shader& shader)
     bBox_mesh.Render(shader);
 }
 
-
 void BoundingBox::ExpandToInclude(const BoundingBox& bbox)
 {
     // Update the minimum and maximum bounds of the current bounding box
@@ -148,7 +126,6 @@ void BoundingBox::Move(const glm::vec3& movePos)
     m_minBounds += movePos;
     m_maxBounds += movePos;
 }
-
 
 bool BoundingBox::CheckCollision(const BoundingBox& other)
 {

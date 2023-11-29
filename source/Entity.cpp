@@ -1,14 +1,28 @@
 #include"Entity.h"
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/vector_angle.hpp>
+#include <glm/gtx/vector_query.hpp>
+#include <glm/gtx/perpendicular.hpp>
+#include <glm/gtx/projection.hpp>
 
 Entity::Entity() : m_position(0.0f, 0.0f, 0.0f),
                    m_rotation(0.0f, 0.0f, 0.0f),
                    m_scale(1.0f, 1.0f, 1.0f), 
-                   m_model(nullptr) {}
+                   m_model(nullptr) 
+{
+    ComputeBoundingBox();
+}
 
 Entity::Entity(const std::string& pathToModel, const glm::vec3& position,
-                const glm::vec3& rotation, const glm::vec3& scale) :
+                const glm::vec3& rotation, const glm::vec3& scale, 
+                glm::vec3 velocity, float mass, 
+                glm::vec3 torque, float rotationAngle, float angularVel):
                 m_position(position), m_rotation(rotation),
-                m_scale(scale)
+                m_scale(scale),m_velocity(velocity),
+                m_mass(mass),m_torque(torque),
+                m_rotationAngle(rotationAngle),
+                m_angularVel(angularVel)
 {
     m_model = new Model(pathToModel);
     ComputeBoundingBox();
@@ -17,7 +31,10 @@ Entity::Entity(const std::string& pathToModel, const glm::vec3& position,
 Entity::Entity(Model* model,const glm::vec3& position, 
                const glm::vec3& rotation, const glm::vec3& scale) :
                m_model(model),m_position(position), 
-               m_rotation(rotation), m_scale(scale)  {}
+               m_rotation(rotation), m_scale(scale)  
+{
+    ComputeBoundingBox();
+}
 
 void Entity::Render(Shader& shader)
 {
@@ -26,10 +43,14 @@ void Entity::Render(Shader& shader)
 
     //Apply transtion 
     modelMatrix = glm::translate(modelMatrix, m_position);
+
     // Apply rotation
     modelMatrix = glm::rotate(modelMatrix, m_rotation.z, glm::vec3(0, 0, 1));
     modelMatrix = glm::rotate(modelMatrix, m_rotation.y, glm::vec3(0, 1, 0));
     modelMatrix = glm::rotate(modelMatrix, m_rotation.x, glm::vec3(1, 0, 0));
+
+ //   modelMatrix = glm::rotate(modelMatrix, m_rotationAngle, m_torque);
+
     // Apply scaling 
     modelMatrix = glm::scale(modelMatrix, m_scale);
 
@@ -55,19 +76,11 @@ void Entity::RotateOverTime(float deltaTime, const glm::vec3& rotateAxis)
     float rotationAngle = glm::radians(rotationSpeed * accumulatedTime);
     m_rotation = rotationAngle * rotateAxis;
 }
-//void Entity::SetPosition(const glm::vec3& position)
-//{
-//    glm::vec3 deltaPos = position - m_position;
-//    m_position = position;
-//    UpdateBoundingBox(deltaPos);
-//}
+
 void Entity::OnMove(float deltaTime)
 {
-    const float speed = 0.5f;
-    float horizontalMovement = speed * deltaTime;
-    glm::vec3 newPos = m_position;
-    newPos.x += horizontalMovement;
-    // Set the new position for the spider
+    glm::vec3 newPos = m_position + m_velocity * deltaTime;
+    m_rotationAngle += m_angularVel * deltaTime;
     SetPosition(newPos);
 }
 
@@ -111,4 +124,44 @@ void Entity::UpdateBoundingBox(glm::vec3 deltaPos)
 const BoundingBox& Entity::GetBoundingBox() const
 {
     return m_modelBounds;
+}
+
+void Entity::performCollision(Entity& obj1, Entity& obj2)
+{
+    glm::vec3 centersVector = (obj1.m_position - obj2.m_position);
+    centersVector = glm::normalize(centersVector);
+
+    glm::vec3 v1proj = glm::proj(obj1.m_velocity, centersVector);
+    glm::vec3 v2proj = glm::proj(obj2.m_velocity, centersVector);
+
+    float v1n = -1.0f * glm::length(v1proj);
+    float v2n = glm::length(v2proj);
+
+    float v1n_final = (v1n * (obj1.m_mass - obj2.m_mass) + 2 * (obj2.m_mass) * v2n) / (obj1.m_mass + obj2.m_mass);
+    float v2n_final = (v2n * (obj2.m_mass - obj1.m_mass) + 2 * (obj1.m_mass) * v1n) / (obj1.m_mass + obj2.m_mass);
+
+    glm::vec3 Ff1_dir = glm::normalize(-(obj1.m_velocity - v1proj));
+    glm::vec3 Ff2_dir = glm::normalize(-(obj2.m_velocity - v2proj));
+
+    obj1.m_velocity = (obj1.m_velocity - v1proj) + (v1n_final * glm::normalize(centersVector));
+    obj2.m_velocity = (obj2.m_velocity - v2proj) + (v2n_final * glm::normalize(centersVector));
+
+    //Ff = kfc * (m * (deltav)/(deltat))
+    float kfc_div_deltat = 0.1f;
+    float Ff_norm = obj1.m_mass * (v1n_final - v1n) * kfc_div_deltat * 2;//equals to obj2.mass * (v2n_final - v2n) * kfc_div_deltat
+
+    glm::vec3 Ff1 = Ff1_dir * Ff_norm;
+    glm::vec3 Ff2 = Ff2_dir * Ff_norm;
+
+    glm::vec3 torque1 = glm::cross((-centersVector), Ff1);
+    glm::vec3 torque2 = glm::cross((centersVector), Ff2);
+
+    obj1.m_torque += torque1;
+    obj2.m_torque += torque2;
+
+    float alpha1 = glm::length(obj1.m_torque) / (0.4 * obj1.m_mass * (0.93) * (0.93));//I = 2/5 * m * r^2
+    float alpha2 = glm::length(obj2.m_torque) / (0.4 * obj2.m_mass * (0.93) * (0.93));//I = 2/5 * m * r^2
+
+    obj1.m_angularVel = alpha1;
+    obj2.m_angularVel = alpha2;    
 }

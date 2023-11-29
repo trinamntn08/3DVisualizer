@@ -43,7 +43,6 @@ public:
 	bool RayIntersectsBoundingBox(glm::vec2 &mousePos,const BoundingBox& bbox, glm::vec3& intersectPoint);
 	bool RayIntersectsBoundingBox(const Ray& ray, const BoundingBox& bbox,glm::vec3& intersectPts);
 
-	bool RayIntersectsPlane(const Ray& ray, Plane& plane, glm::vec3& intersectPts);
 
 private:
 	AppSpecification m_spec;

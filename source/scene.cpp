@@ -1,5 +1,6 @@
 #include"scene.h"
-
+#include"traceRay.h"
+#include"Logger.h"
 
 Scene::Scene()
 {
@@ -7,13 +8,18 @@ Scene::Scene()
 
 void Scene::loadScene()
 {
-    InitializeCubes(cubePath);
+    InitializeCubes(environementPath);
     CalculateSceneBounds();
     m_spider = new Entity(spiderPath, glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(0.02f));
-    m_ball = new Entity(ballPath, glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(1.f));
+    m_ball1 = new Entity(ballPath, glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(1.f));
+    m_ball2 = new Entity(ballPath, glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(1.f));
     UpdateEntityToFitScene(*m_spider);
-    UpdateEntityToFitScene(*m_ball);
-    m_cubemap = InitializeCubemap();
+    UpdateEntityToFitScene(*m_ball1);
+    UpdateEntityToFitScene(*m_ball2);
+
+    m_ball1->Translation(glm::vec3(-5.0f, 0.0f, 0.0f));
+    m_ball2->Translation(glm::vec3(5.0f, 0.0f, 0.0f));
+    m_environement = InitializeEnvironement();
 
 }
 
@@ -21,15 +27,22 @@ std::vector<Entity*> Scene::AllObjects()
 {
     std::vector<Entity*> allObjects;
     allObjects.push_back(m_spider);
-    allObjects.push_back(m_ball);
+    allObjects.push_back(m_ball1);
+    allObjects.push_back(m_ball2);
 
     return allObjects;
 }
 void Scene::OnUpdate(float deltaTime)
 {
-    glm::vec3 rotateAxis(0.0f, 0.0f, -1.0f);
-    m_ball->RotateOverTime(deltaTime, rotateAxis);
-    m_ball->OnMove(deltaTime);
+    m_ball1->OnMove(deltaTime);
+ //   m_ball2->OnMove(deltaTime/3);
+    if (BoundingBox::CheckCollision(m_ball1->GetBoundingBox(), m_ball2->GetBoundingBox()))
+    {
+        Log::info("Objects Collision!");
+        Log::info(m_ball1->getInfo());
+        Log::info(m_ball2->getInfo());
+        Entity::performCollision(*m_ball1, *m_ball2);
+    }
 }
 
 void Scene::InitializeCubes(const std::string &filePath)
@@ -82,7 +95,8 @@ void Scene::RenderObjects(Shader& shader, bool render_BBoxes)
         cube->Render(shader);
     }
     m_spider->Render(shader);
-    m_ball->Render(shader);
+    m_ball1->Render(shader);
+    m_ball2->Render(shader);
 
 
     // Render bounding boxes
@@ -96,12 +110,12 @@ void Scene::RenderObjects(Shader& shader, bool render_BBoxes)
     }
     
 }
-void Scene::RenderCubeMap(Shader& shader_cubemap)
+void Scene::RenderEnvironment(Shader& shader_environement)
 {
-    shader_cubemap.activate();
-    m_cubemap->Render(shader_cubemap);
+    shader_environement.activate();
+    m_environement->Render(shader_environement);
 }
-Mesh* Scene::InitializeCubemap()
+Mesh* Scene::InitializeEnvironement()
 {
     // cube vertices for vertex buffer object
     std::vector<Vertex> vertices;
@@ -274,5 +288,6 @@ void Scene::handleCollision()
 
     std::cout << "Collision detected! Object pushed back." << std::endl;
 }
+
 
 

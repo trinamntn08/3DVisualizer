@@ -1,5 +1,6 @@
 #include "Application.h"
 #include"Logger.h"
+#include <glm/gtc/matrix_transform.hpp> 
 
 Application* CreateApplication()
 {
@@ -107,7 +108,7 @@ void Application::Run()
     while (!glfwWindowShouldClose(m_window))
     {
         // per-frame time logic
-        float currentFrame = static_cast<float>(glfwGetTime());
+        float currentFrame = (float)glfwGetTime();
         m_frameTime = currentFrame - m_lastFrameTime;
 
         DisplayFPS(currentFrame);
@@ -131,7 +132,7 @@ void Application::Run()
         glm::mat4 projection = m_camera.GetProjectionMatrix();
         m_shader_scene.setMat_MVP(model, view, projection);
 
-        m_scene.RenderObjects(m_shader_scene);
+        m_scene.RenderObjects(m_shader_scene,false);
 
         // Render Cubemap
         glDepthFunc(GL_LEQUAL);
@@ -142,7 +143,7 @@ void Application::Run()
         glm::mat4 projection_cubemap = m_camera.GetProjectionMatrix();
         m_shader_cubemap.setMat_MVP(model_cubemap, view_cubemap, projection_cubemap);
 
-        m_scene.RenderCubeMap(m_shader_cubemap);
+        m_scene.RenderEnvironment(m_shader_cubemap);
 
         glDepthFunc(GL_LESS);
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
@@ -161,22 +162,18 @@ void Application::DisplayFPS(float currentFrame)
     counter++; //nbr of frames
 
     // Update title every second
-    if (m_timeStep >= 1.0f)
+    if (counter >= 30)
     {
-        // Avoid division by zero
-        if (counter > 0)
-        {
-            // Calculate FPS and milliseconds per frame
-            float fps = counter / m_timeStep;
-            float msPerFrame = m_timeStep / (counter) * 1000.0f;
+        // Calculate FPS and milliseconds per frame
+        float fps = counter / m_timeStep;
+        float msPerFrame = m_timeStep / (counter) * 1000.0f;
 
-            // Creates new title
-            std::string FPS = std::to_string(static_cast<int>(fps));
-            std::string ms = std::to_string((msPerFrame));
-            std::string newTitle = "3D Visualizer - " + FPS + "FPS / " + ms + "ms";
+        // Creates new title
+        std::string FPS = std::to_string(static_cast<int>(fps));
+        std::string ms = std::to_string((msPerFrame));
+        std::string newTitle = "3D Visualizer - " + FPS + "FPS / " + ms + "ms";
 
-            glfwSetWindowTitle(m_window, newTitle.c_str());
-        }
+        glfwSetWindowTitle(m_window, newTitle.c_str());
 
         // Reset counters and timer
         m_timeStep = 0.0f;
@@ -193,7 +190,6 @@ void Application::MoveObjects()
     // Click on objects
     if (m_mouseHandler.leftButton.isLeftPressed)
     {
-        // Get mouse cursor position
         double mouseX, mouseY;
         glfwGetCursorPos(m_window, &mouseX, &mouseY);
         glm::vec2 mousePosition((float)mouseX, (float)mouseY);
@@ -203,21 +199,28 @@ void Application::MoveObjects()
             glm::vec3 intersectPoint;
             bool hit = RayIntersectsBoundingBox(mousePosition, item->GetBoundingBox(), intersectPoint);
 
-            if (hit)
+            glm::vec3 clickedPtsOnScene;
+            bool hitScene = RayIntersectsBoundingBox(mousePosition, m_scene.getSceneBounds(), clickedPtsOnScene);
+
+            if((hit && hitScene) || isObjectGrabbed)
             {
-                Log::info("Bounding Box Clicked!");
+                Log::info("Object Clicked!");
+               /* Log::info("Intersection Point: " +
+                            std::to_string(intersectPoint.x) + " " +
+                            std::to_string(intersectPoint.y) + " " +
+                            std::to_string(intersectPoint.z));*/
                 if (!isObjectGrabbed)
                 {
-                    // Grab the object on the first press
                     isObjectGrabbed = true;
-                    grabOffset = intersectPoint - item->GetPosition();
+                    //    grabOffset = intersectPoint - item->GetPosition();
+                    grabOffset = clickedPtsOnScene - item->GetPosition();
                     grabbedObject = item;
                 }
 
                 if (isObjectGrabbed && grabbedObject == item)
                 {
-                    // Set the speed at which the object moves
-                    float moveSpeed = 0.1f;
+                    Log::info(item->getInfo());
+
 
                     const BoundingBox& bbox_item = item->GetBoundingBox();
 
@@ -226,27 +229,24 @@ void Application::MoveObjects()
 
                     if (collisionDetected)
                     {
-                        Log::info("Collision Detected !!!");
+                        Log::info("Object on the scene!!!");
                     }
 
-                    glm::vec3 newPos(intersectPoint.x - grabOffset.x,
-                                      intersectPoint.y - grabOffset.y,
-                                      intersectPoint.z - grabOffset.z);
+                    glm::vec3 newTarget(clickedPtsOnScene.x - grabOffset.x,
+                                        clickedPtsOnScene.y - grabOffset.y,
+                                        clickedPtsOnScene.z - grabOffset.z);
 
                     // Ensure the object stays above the scene
                     float minY = m_scene.getSceneBounds().GetMaxBounds().y + bbox_item.GetDimensions().y / 2.0f;
-                    newPos.y = std::max(newPos.y, minY);
-                 //   movePos.y = minY;
-                    Log::info("Object Pos: " + std::to_string(item->GetPosition().x) + " " +
-                        std::to_string(item->GetPosition().y) + " " +
-                        std::to_string(item->GetPosition().z));
-                    item->SetPosition(newPos);
+                    newTarget.y = std::max(newTarget.y, minY);
+                    // Smoothly move the object
+                    static float moveSpeed = 0.05f;
+                    glm::vec3 newPos = glm::mix(item->GetPosition(), newTarget, moveSpeed);
 
+                    item->SetPosition(newPos);
                 }
             }
         }
-
-        
     }
     else
     {
@@ -261,26 +261,24 @@ bool Application::RayIntersectsBoundingBox(glm::vec2& mousePos,const BoundingBox
     float ndcY = 1.0f - (2.0f * mousePos.y) / m_camera.GetViewPortHeight();
 
     // Construct the near and far points in clip space
-    glm::vec4 nearPoint = glm::vec4(ndcX, ndcY, -1.0f, 1.0f);
+    glm::vec4 nearPoint = glm::vec4(ndcX, ndcY, 0.0f, 1.0f);
     glm::vec4 farPoint = glm::vec4(ndcX, ndcY, 1.0f, 1.0f);
 
     // Convert the near and far points to view space
     glm::mat4 inverseProjection = m_camera.GetInverseProjectionMatrix();
     glm::mat4 inverseView = m_camera.GetInverseViewMatrix();
 
-    glm::vec4 nearPointView = inverseProjection * nearPoint;
+    glm::vec4 nearPointView = inverseView * (inverseProjection * nearPoint);
     nearPointView /= nearPointView.w;
-    nearPointView = inverseView * nearPointView;
 
-    glm::vec4 farPointView = inverseProjection * farPoint;
+    glm::vec4 farPointView = inverseView * (inverseProjection * farPoint);
     farPointView /= farPointView.w;
-    farPointView = inverseView * farPointView;
 
     // Create the ray
     Ray ray;
     ray.Origin = glm::vec3(nearPointView);
     ray.Direction = glm::normalize(glm::vec3(farPointView - nearPointView));
-
+    // Print statements for debugging
     bool hit =  RayIntersectsBoundingBox(ray, bbox, intersectPoint);
     return hit;
 }
@@ -288,14 +286,14 @@ bool Application::RayIntersectsBoundingBox(glm::vec2& mousePos,const BoundingBox
 bool Application::RayIntersectsBoundingBox(const Ray& ray, const BoundingBox& bbox, glm::vec3& intersectPts)
 {
     // Perform ray-box intersection tests
-    float txmin, txmax, tymin, tymax, tzmin, tzmax;
+    float tmin, tmax, tymin, tymax, tzmin, tzmax;
 
     // Initialize tmin and tmax to the minimum and maximum possible values
-    txmin = (bbox.GetMinBounds().x - ray.Origin.x) / ray.Direction.x;
-    txmax = (bbox.GetMaxBounds().x - ray.Origin.x) / ray.Direction.x;
-    if (txmin > txmax)
+    tmin = (bbox.GetMinBounds().x - ray.Origin.x) / ray.Direction.x;
+    tmax = (bbox.GetMaxBounds().x - ray.Origin.x) / ray.Direction.x;
+    if (tmin > tmax)
     {
-       std::swap(txmin, txmax);
+       std::swap(tmin, tmax);
     }
 
     tymin = (bbox.GetMinBounds().y - ray.Origin.y) / ray.Direction.y;
@@ -305,47 +303,32 @@ bool Application::RayIntersectsBoundingBox(const Ray& ray, const BoundingBox& bb
         std::swap(tymin, tymax);
     }
 
+    if (tmin > tymax || tymin > tmax)
+        return false;
+
+    if (tymin > tmin)
+        tmin = tymin;
+
+    if (tymax < tmax)
+        tmax = tymax;
+
     tzmin = (bbox.GetMinBounds().z - ray.Origin.z) / ray.Direction.z;
     tzmax = (bbox.GetMaxBounds().z - ray.Origin.z) / ray.Direction.z;
     if (tzmin > tzmax)
     {
         std::swap(tzmin, tzmax);
     }
-
-    float tmin = std::max(txmin, std::max(tymin, tzmin));
-    float tmax = std::min(txmax, std::min(tymax, tzmax));
-
-    if (txmin > tymax || tymin > txmax)
+    if ((tmin > tzmax) || (tzmin > tmax))
         return false;
-    if (txmin > tzmax || tzmin > txmax)
-        return false;
+
+    if (tzmin > tmin)
+        tmin = tzmin;
+
+    if (tzmax < tmax)
+        tmax = tzmax;
 
     // Calculate the intersection point
     intersectPts = ray.Origin + tmin * ray.Direction;
 
     return true;
 }
-
-bool Application::RayIntersectsPlane(const Ray& ray, Plane& plane, glm::vec3& intersectPts)
-{
-    // Check if the ray and plane are not parallel
-    float denom = glm::dot(ray.Direction , plane.normal);
-    if (std::abs(denom) > 1e-6)
-    {
-        // Calculate the parameter along the ray where it intersects the plane
-        float t = glm::dot(plane.point - ray.Origin, plane.normal) / denom;
-
-        // Check if the intersection point is in front of the ray origin
-        if (t >= 0.0f)
-        {
-            intersectPts = ray.Origin + t * ray.Direction;
-            return true;
-        }
-    }
-    // No intersection
-    return false;
-}
-
-
-
-

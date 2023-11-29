@@ -34,3 +34,37 @@ struct HitPayload
 	int ObjectIndex;
 };
 
+// Project the movement vector onto the ground plane
+static glm::vec3 projectOntoGround(const glm::vec3& originalPosition, const glm::vec3& movementVector, const glm::vec3& groundNormal)
+{
+	// Ensure the ground normal is normalized
+	glm::vec3 groundNormalNormalized = glm::normalize(groundNormal);
+
+	// Project the movement vector onto the plane defined by the ground normal
+	glm::vec3 projectedVector = movementVector - glm::dot(movementVector, groundNormalNormalized) * groundNormalNormalized;
+
+	// Return the new position after projection
+	return originalPosition + projectedVector;
+}
+
+static bool RayIntersectsPlane(const Ray& ray, Plane& plane, glm::vec3& intersectPts)
+{
+	// Check if the ray and plane are not parallel
+	float denom = glm::dot(ray.Direction, plane.normal);
+	if (std::abs(denom) > 1e-6)
+	{
+		// Calculate the parameter along the ray where it intersects the plane
+		float t = glm::dot(plane.point - ray.Origin, plane.normal) / denom;
+
+		// Check if the intersection point is in front of the ray origin
+		if (t >= 0.0f)
+		{
+			intersectPts = ray.Origin + t * ray.Direction;
+			return true;
+		}
+	}
+	// No intersection
+	return false;
+}
+
+

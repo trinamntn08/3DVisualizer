@@ -41,35 +41,37 @@ void Scene::loadScene()
 {
     InitializeCubes(environmentPath);
     CalculateSceneBounds();
-    //m_spider = new Entity(spiderPath, glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(0.02f));
-    //m_ball1 = new Entity(ballPath, glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(1.f));
-    //m_ball2 = new Entity(ballPath, glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(1.f));
+
+   /* m_spider = new Entity(spiderPath, glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(0.02f));
+    m_ball1 = new Entity(ballPath, glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(1.f));
+    m_ball2 = new Entity(ballPath, glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(1.f));
    
-    //m_allObjects.push_back(m_spider);
-    //m_allObjects.push_back(m_ball1);
-    //m_allObjects.push_back(m_ball2);
+    m_allObjects.push_back(m_spider);
+    m_allObjects.push_back(m_ball1);
+    m_allObjects.push_back(m_ball2);
 
-    //UpdateEntityToFitScene(*m_spider);
-    //UpdateEntityToFitScene(*m_ball1);
-    //UpdateEntityToFitScene(*m_ball2);
+    UpdateEntityToFitScene(*m_spider);
+    UpdateEntityToFitScene(*m_ball1);
+    UpdateEntityToFitScene(*m_ball2);
 
-    //m_ball1->Translation(glm::vec3(-5.0f, 0.0f, 0.0f));
-    //m_ball2->Translation(glm::vec3(5.0f, 0.0f, 0.0f)); 
+    m_ball1->Translation(glm::vec3(-5.0f, 0.0f, 0.0f));
+    m_ball2->Translation(glm::vec3(5.0f, 0.0f, 0.0f)); */
 
-    a_ball1 = new Ball(ballPath, glm::vec3(0.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-    a_ball2 = new Ball(ballPath, glm::vec3(0.0f), glm::vec3(-1.0f, 0.0f, 0.0f));
+	Ball* ball1 = new Ball(ballPath, glm::vec3(0.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+	Ball* ball2 = new Ball(ballPath, glm::vec3(0.0f), glm::vec3(-1.0f, 0.0f, 0.0f));
     
-    UpdatePhysicsObjectToFitScene(*a_ball1);
-    UpdatePhysicsObjectToFitScene(*a_ball2);
+    UpdatePhysicsObjectToFitScene(*ball1);
+    UpdatePhysicsObjectToFitScene(*ball2);
     
-    a_ball1->Translation(glm::vec3(4.0f, 0.0f, 2.0f));
-    a_ball2->Translation(glm::vec3(-4.0f, 0.0f, 2.0f));
+	ball1->Translation(glm::vec3(4.0f, 0.0f, 2.0f));
+	ball2->Translation(glm::vec3(-4.0f, 0.0f, 2.0f));
 
-    m_allPhysicsObjects.push_back(a_ball1);
-    m_allPhysicsObjects.push_back(a_ball2);
+    m_allPhysicsObjects.push_back(ball1);
+    m_allPhysicsObjects.push_back(ball2);
 
-    a_ball1->SetCurrentPosAsOriginalPos();
-    a_ball2->SetCurrentPosAsOriginalPos();
+    ball1->SetCurrentPosAsOriginalPos();
+	ball2->SetCurrentPosAsOriginalPos();
+
     m_environment = InitializeEnvironment();
 }
 void  Scene::ResetScene()
@@ -108,9 +110,9 @@ void Scene::UpdatePhysicsObjectToFitScene(PhysicsObject& object)
 }
 void Scene::OnUpdate(float deltaTime)
 {
-  //  m_ball1->OnMove(deltaTime);
+	/*  m_ball1->OnMove(deltaTime);
  //   m_ball2->OnMove(deltaTime/3);
-    /*if (BoundingBox::CheckCollision(m_ball1->GetBoundingBox(), m_ball2->GetBoundingBox()))
+    if (BoundingBox::CheckCollision(m_ball1->GetBoundingBox(), m_ball2->GetBoundingBox()))
     {
         Log::info("Objects Collision!");
         Log::info(m_ball1->getInfo());
@@ -118,9 +120,11 @@ void Scene::OnUpdate(float deltaTime)
         Entity::performCollision(*m_ball1, *m_ball2);
     }*/
 
+	for (auto& item : AllPhysicsObjects())
+	{
+		item->UpdatePhysics(glm::vec3(0.0f), deltaTime);
+	}
 
-    a_ball1->UpdatePhysics(glm::vec3(0.0f), deltaTime);
-    a_ball2->UpdatePhysics(glm::vec3(0.0f), deltaTime);
 	// check for collisions
 	if (m_properties.collisions)
 	{
@@ -177,7 +181,11 @@ void Scene::RenderObjects(Shader& shader, bool isRender_BBoxes)
     {
         cube->Render(shader);
     }
-    m_spider->Render(shader);
+
+	for (auto& item : AllObjects())
+	{
+		item->Render(shader);
+	}
 
     // Render bounding boxes
     if (isRender_BBoxes)
@@ -360,6 +368,9 @@ std::vector<Texture> LoadCubeMapTextures(std::vector<std::string> textures_faces
 }
 /*********************************************************************************************************
 *                     COLLISIONS
+**********************************************************************************************************/
+/*********************************************************************************************************
+* Plane to Object collsions
 **********************************************************************************************************/
 
 void Scene::checkCollisions()

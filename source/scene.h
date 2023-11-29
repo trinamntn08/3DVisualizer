@@ -30,8 +30,6 @@ public:
     void InitializeCubes(const std::string& filePath);
     inline std::vector<Entity*>& getCubes(){ return m_cubes;}
 
-    inline Entity* getSpider() { return m_spider;}
-    inline Entity* getBall() { return m_ball1; }
     Mesh* InitializeEnvironment();
 
     void UpdateEntityToFitScene(Entity& entity);
@@ -41,6 +39,9 @@ public:
     inline const BoundingBox& getSceneBounds() const { return m_sceneBounds;}
 
     inline std::vector<Entity*> AllObjects() { return m_allObjects;};
+
+    void setGravity(const glm::vec3 gravity) { m_gravity = gravity; }
+    glm::vec3 getGravity() const { return m_gravity; }
 
 
     // PHYSICS OBJECTS
@@ -74,16 +75,17 @@ public:
     PhysicsProperties m_properties;
 
 private:
-    std::vector<Entity*> m_cubes;
-    Entity* m_ball1=nullptr;
+   
+  /*  Entity* m_ball1=nullptr;
     Entity* m_ball2 = nullptr;
-    Entity* m_spider = nullptr;
-    std::vector<Entity*> m_allObjects;
+    Entity* m_spider = nullptr;*/
 
+    std::vector<Entity*> m_allObjects;
+    std::vector<PhysicsObject*> m_allPhysicsObjects;
+
+    std::vector<Entity*> m_cubes;
     BoundingBox m_sceneBounds;
     Mesh* m_environment = nullptr;
 
-    Ball* a_ball1 = nullptr;
-    Ball* a_ball2 = nullptr;
-    std::vector<PhysicsObject*> m_allPhysicsObjects;
+    glm::vec3 m_gravity = glm::vec3(0.f);
 };

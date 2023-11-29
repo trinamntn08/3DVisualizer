@@ -15,24 +15,40 @@ class RigidBody;
 class PhysicsObject
 {
 protected:
-	PhysicsObject();
+	PhysicsObject() {};
 	PhysicsObject(ShapeType shapeID) : m_shapeID(shapeID) {}
 public:
-	virtual void updatePhysics(glm::vec3 gravity, float timeStep) = 0;
+	virtual ~PhysicsObject()
+	{
+		if (m_rigidbody != nullptr) 
+		{
+			delete m_rigidbody;
+		}
+	}
+	virtual void UpdatePhysics(glm::vec3 gravity, float timeStep) = 0;
 
 	int getShapeID() { return m_shapeID; }
 
-	virtual glm::vec3 getPosition();
-	virtual glm::vec3 getVelocity();
+	virtual glm::vec3 GetPosition();
+	virtual glm::vec3 GetStartPosition();
+	virtual glm::vec3 GetVelocity();
+	virtual glm::vec3 GetStartVelocity();
+	virtual glm::vec3 GetRotation();
+	virtual float GetMass();
 
-	virtual void setPosition(glm::vec3 position);
-	virtual void setVelocity(glm::vec3 velocity);
+
+	virtual void SetPosition(glm::vec3 position);
+	virtual void SetVelocity(glm::vec3 velocity);
+	virtual void SetRotation(glm::vec3 rotation);
+
+	void SetOriginalPosition(glm::vec3 position);
+	void SetCurrentPosAsOriginalPos();
 	
-	RigidBody * rigidbody() { return m_rigidbody; }
-	bool toggle2D() { m_2D = !m_2D; return m_2D; }
+	RigidBody* Rigidbody() { return m_rigidbody; }
+	bool Switch2DState() { m_2D = !m_2D; return m_2D; }
 
-	virtual void resetPosition();
-	virtual void resetVelocity();
+	virtual void ResetPosition();
+	virtual void ResetVelocity();
 
 protected:
 	ShapeType m_shapeID=ShapeType::BOX;

@@ -36,7 +36,7 @@ struct RigidBodyData
 class RigidBody
 {
 public:
-	RigidBody();
+	RigidBody() {};
 	RigidBody(glm::vec3 position, glm::vec3 velocity, glm::vec3 rotation, float mass);
 	RigidBody(glm::vec3 position, float angle, float speed, glm::vec3 rotation, float mass);
 
@@ -50,13 +50,11 @@ public:
 	void applyTorque(glm::vec3 force);
 	void applyTorqueToAnotherBody(RigidBody* otherBody, glm::vec3 force);
 	
-	// position prediction
+	// position prediction, only on x,y axis
 	glm::vec3 predictPosition(float deltatime, float angle, float speed, glm::vec3 gravity);
 	glm::vec3 predictPosition(float deltatime, glm::vec3 velocity, glm::vec3 gravity);
 	glm::vec3 predictPosition(float deltatime, glm::vec3 gravity);
 
 	RigidBodyData m_data;
-protected:
-//	glm::vec3 m_startPosition=glm::vec3(0.0f);
 };
 

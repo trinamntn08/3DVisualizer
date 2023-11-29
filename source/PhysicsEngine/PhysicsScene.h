@@ -2,7 +2,8 @@
 #include <vector>
 #include "glm\glm.hpp"
 
-struct PhysicsProperties {
+struct PhysicsProperties
+{
 	bool gravity = false;
 	bool collisions = false;
 	bool collisionResponse = false;
@@ -15,49 +16,49 @@ class PhysicsScene
 public:
 	PhysicsScene();
 	~PhysicsScene();
-	// update functions
-	void update(float a_dt);
-	// actor functions
-	void addActor(PhysicsObject * a_actor);
-	void removeActor(PhysicsObject * a_actor);
-	int numberOfActors() { return m_actors.size(); }
+
+	void Update(float deltaTime);
+
+	void addObject(PhysicsObject* object);
+	void removeObject(PhysicsObject* object);
+
+	std::vector<PhysicsObject*> getAllObjects() { return m_allObjects; };
+	int numberOfObjects() { return m_allObjects.size(); }
+
 	void resetScene();
 	void clearScene();
-	// get/set
-	void setGravity(const glm::vec3 a_gravity) { m_gravity = a_gravity; }
-	glm::vec3 setGravity() const { return m_gravity; }
-	void setTimeStep(const float a_timeStep) { m_timeStep = a_timeStep; }
+
+	void setGravity(const glm::vec3 gravity) { m_gravity = gravity; }
+	glm::vec3 getGravity() const { return m_gravity; }
+
+	void setTimeStep(const float timeStep) { m_timeStep = timeStep; }
 	float setTimeStep() const { return m_timeStep; }
-	std::vector<PhysicsObject*> actors() { return m_actors; };
-	// collision functions
+
+	/**************     COLLISIONS  ****************/
 	void checkCollisions();
-	// collision detection
 	// plane
-	static bool planeToPlane(PhysicsObject * a_planeA, PhysicsObject * a_planeB);
-	static bool planeToSphere(PhysicsObject *  a_plane, PhysicsObject * a_sphere);
-	static bool planeToBox(PhysicsObject *  a_plane, PhysicsObject * a_box);
+	static bool planeToPlane(PhysicsObject* planeA, PhysicsObject* planeB);
+	static bool planeToSphere(PhysicsObject* plane, PhysicsObject* sphere);
+	static bool planeToBox(PhysicsObject*  plane, PhysicsObject* box);
 	// sphere
-	static bool sphereToSphere(PhysicsObject * a_sphereA, PhysicsObject * a_sphereB);
-	static bool sphereToPlane(PhysicsObject * a_sphere, PhysicsObject * a_plane);
-	static bool sphereToBox(PhysicsObject * a_sphere, PhysicsObject * a_box);
+	static bool sphereToSphere(PhysicsObject* sphereA, PhysicsObject* sphereB);
+	static bool sphereToPlane(PhysicsObject* sphere, PhysicsObject* plane);
+	static bool sphereToBox(PhysicsObject* sphere, PhysicsObject* box);
 	// box
-	static bool boxToSphere(PhysicsObject * a_box, PhysicsObject * a_sphere);
-	static bool boxToPlane(PhysicsObject * a_box, PhysicsObject * a_plane);
-	static bool boxToBox(PhysicsObject * a_boxA, PhysicsObject * a_boxB);
+	static bool boxToSphere(PhysicsObject* box, PhysicsObject* sphere);
+	static bool boxToPlane(PhysicsObject* box, PhysicsObject* plane);
+	static bool boxToBox(PhysicsObject * boxA, PhysicsObject* boxB);
+	/************************************************/
 
 	// scene properties
-	PhysicsProperties properties;
+	PhysicsProperties m_properties;
 
 protected:
-	glm::vec3	m_gravity;
-	float		m_timeStep;
-	std::vector<PhysicsObject*> m_actors;
-	// gui options
+	glm::vec3 m_gravity=glm::vec3(0.f);
+	float m_timeStep = 0.f;
+	std::vector<PhysicsObject*> m_allObjects;
+
 	bool m_applyForce;
-	int m_iActorA;
-	PhysicsObject* m_pActorA = nullptr;
-	int m_iActorB;
-	PhysicsObject* m_pActorB = nullptr;
 
 };
 

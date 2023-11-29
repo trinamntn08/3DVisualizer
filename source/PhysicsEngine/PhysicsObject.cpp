@@ -2,22 +2,32 @@
 #include "RigidBody.h"
 
 
-
-PhysicsObject::PhysicsObject()
+glm::vec3 PhysicsObject::GetPosition()
 {
+	return m_rigidbody != nullptr ? m_rigidbody->m_data.position : glm::vec3(0.0f);
+}
+glm::vec3 PhysicsObject::GetStartPosition()
+{
+	return m_rigidbody != nullptr ? m_rigidbody->m_data.startPosition : glm::vec3(0.0f);
+}
+glm::vec3 PhysicsObject::GetVelocity()
+{
+	return m_rigidbody != nullptr ? m_rigidbody->m_data.velocity : glm::vec3(0.0f);
+}
+glm::vec3 PhysicsObject::GetStartVelocity()
+{
+	return m_rigidbody != nullptr ? m_rigidbody->m_data.startVelocity : glm::vec3(0.0f);
+}
+glm::vec3 PhysicsObject::GetRotation()
+{
+	return m_rigidbody != nullptr ? m_rigidbody->m_data.rotation : glm::vec3(0.0f);
+}
+float PhysicsObject::GetMass()
+{
+	return m_rigidbody != nullptr ? m_rigidbody->m_data.mass : 0.0f;
 }
 
-glm::vec3 PhysicsObject::getPosition()
-{
-	return m_rigidbody != nullptr ? m_rigidbody->m_data.position : glm::vec3(-1.0f);
-}
-
-glm::vec3 PhysicsObject::getVelocity()
-{
-	return m_rigidbody != nullptr ? m_rigidbody->m_data.velocity : glm::vec3(-1.0f);
-}
-
-void PhysicsObject::setPosition(glm::vec3 position)
+void PhysicsObject::SetPosition(glm::vec3 position)
 {
 	if (m_rigidbody != nullptr) 
 	{
@@ -25,15 +35,35 @@ void PhysicsObject::setPosition(glm::vec3 position)
 	}
 }
 
-void PhysicsObject::setVelocity(glm::vec3 velocity)
+void PhysicsObject::SetVelocity(glm::vec3 velocity)
 {
 	if (m_rigidbody != nullptr) 
 	{
 		m_rigidbody->m_data.velocity = velocity;
 	}
 }
-
-void PhysicsObject::resetPosition()
+void PhysicsObject::SetRotation(glm::vec3 rotation)
+{
+	if (m_rigidbody != nullptr)
+	{
+		m_rigidbody->m_data.rotation = rotation;
+	}
+}
+void PhysicsObject::SetOriginalPosition(glm::vec3 position)
+{
+	if (m_rigidbody != nullptr)
+	{
+		m_rigidbody->m_data.startPosition = position;
+	}
+}
+void PhysicsObject::SetCurrentPosAsOriginalPos()
+{
+	if (m_rigidbody != nullptr)
+	{
+		m_rigidbody->m_data.startPosition = m_rigidbody->m_data.position;
+	}
+}
+void PhysicsObject::ResetPosition()
 {
 	if (m_rigidbody != nullptr) 
 	{
@@ -41,7 +71,7 @@ void PhysicsObject::resetPosition()
 	}
 }
 
-void PhysicsObject::resetVelocity()
+void PhysicsObject::ResetVelocity()
 {
 	if (m_rigidbody != nullptr) 
 	{

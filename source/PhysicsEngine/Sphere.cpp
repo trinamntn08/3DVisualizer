@@ -1,6 +1,5 @@
 #include "Sphere.h"
 #include "RigidBody.h"
-#include "glm\gtx\transform.hpp"
 
 Sphere::Sphere(glm::vec3 position, glm::vec3 velocity, float mass, float radius, glm::vec4 color, bool twoD)
 {
@@ -20,14 +19,134 @@ Sphere::Sphere(glm::vec3 position, float angle, float speed, float mass, float r
 	m_2D = twoD;
 }
 
-Sphere::~Sphere()
-{
-	delete m_rigidbody;
-}
 
-void Sphere::updatePhysics(glm::vec3 gravity, float timeStep)
+void Sphere::UpdatePhysics(glm::vec3 gravity, float timeStep)
 {
 	m_rigidbody->updatePhysics(gravity, timeStep);
 }
 
+/////////////////////////////////////////////////////////////////
+
+Ball::Ball(const std::string& pathToModel, const glm::vec3& position,
+    glm::vec3 velocity, float mass, 
+    const glm::vec3& scale, float radius):Sphere(position,velocity,mass,radius)
+{
+    LoadModel(pathToModel);
+    ComputeBoundingBox();
+    auto bbox_radius = m_bbox.GetBoundingBoxRadius()/2.0f;
+    SetRadius(bbox_radius);
+}
+
+//Ball::Ball(Model* model, const glm::vec3& position,
+//    const glm::vec3& rotation, const glm::vec3& scale) :
+//    Spher, m_scale(scale)
+//{
+//    ComputeBoundingBox();
+//}
+
+
+void Ball::LoadModel(const std::string& pathToModel)
+{
+    m_model = new Model(pathToModel);
+}
+void Ball::Render(Shader& shader)
+{
+    if (!m_model)
+        return;
+    // Update the model matrix based on the position
+    glm::mat4 modelMatrix = glm::mat4(1.0f);
+
+    //Apply transtion 
+    glm::vec3 pos = GetPosition();
+    modelMatrix = glm::translate(modelMatrix, pos);
+
+    // Apply rotation
+    glm::vec3 rot = GetRotation();
+    modelMatrix = glm::rotate(modelMatrix, rot.z, glm::vec3(0, 0, 1));
+    modelMatrix = glm::rotate(modelMatrix, rot.y, glm::vec3(0, 1, 0));
+    modelMatrix = glm::rotate(modelMatrix, rot.x, glm::vec3(1, 0, 0));
+
+    // Apply scaling 
+    modelMatrix = glm::scale(modelMatrix, m_scale);
+
+    shader.setMat4("model", modelMatrix);
+    m_model->Render(shader);
+}
+
+void Ball::UpdatePhysics(glm::vec3 gravity, float timeStep)
+{
+    m_rigidbody->updatePhysics(gravity, timeStep);
+    auto velocity = GetVelocity();
+    UpdateBoundingBox(velocity * timeStep);
+}
+
+void Ball::ComputeBoundingBox()
+{
+    if (m_model->meshes.empty())
+    {
+        return;
+    }
+    m_bbox.Reset();
+    // Initialize temporary bounds with the position of the first vertex
+    glm::vec3 pos = GetPosition();
+    glm::vec3 minBound_temp = m_model->meshes[0].vertices[0].Position + pos;
+    glm::vec3 maxBound_temp = minBound_temp;
+
+    // Iterate over each mesh within the model
+    for (const Mesh& mesh : m_model->meshes)
+    {
+        // Iterate over each vertex within the mesh
+        for (const Vertex& vertex : mesh.vertices)
+        {
+            // Apply the model's position to the vertex
+            glm::vec3 vertexPosition = vertex.Position + pos;
+
+            // Update the temporary bounds more efficiently
+            minBound_temp = glm::min(minBound_temp, vertexPosition);
+            maxBound_temp = glm::max(maxBound_temp, vertexPosition);
+        }
+    }
+
+    // Update the model's bounding box with scale
+    minBound_temp *= m_scale;
+    maxBound_temp *= m_scale;
+
+    m_bbox.setMinBound(minBound_temp);
+    m_bbox.setMaxBound(maxBound_temp);
+}
+
+void Ball::UpdateBoundingBox(glm::vec3 deltaPos)
+{
+    m_bbox.Move(deltaPos);
+}
+
+void Ball::SetPosition(const glm::vec3& newPosition)
+{
+    glm::vec3 pos = GetPosition();
+    glm::vec3 deltaPos = newPosition - pos;
+    Sphere::SetPosition(newPosition);
+    UpdateBoundingBox(deltaPos);
+}
+
+void Ball::Translation(const glm::vec3&& deltaPos)
+{
+    glm::vec3 newPos = GetPosition()+ deltaPos;
+    Sphere::SetPosition(newPos);
+    UpdateBoundingBox(deltaPos);
+}
+
+std::string Ball::GetInfo()
+{
+    auto position = GetPosition();
+    auto rotation = GetRotation();
+    std::stringstream ss;
+    ss << "Ball Position: " << std::to_string(position.x) << " " <<
+        std::to_string(position.y) << " " <<
+        std::to_string(position.z) << "\n ";
+
+    ss << "Rotation: " << std::to_string(rotation.x) << " " <<
+        std::to_string(rotation.y) << " " <<
+        std::to_string(rotation.z);
+    return ss.str();
+}
 

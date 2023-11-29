@@ -5,9 +5,6 @@
 #define MIN_LINEAR_THRESHOLD 0.05f
 #define MIN_ROTATION_THRESHOLD 0.05f
 
-RigidBody::RigidBody()
-{
-}
 
 RigidBody::RigidBody(glm::vec3 position, glm::vec3 velocity, glm::vec3 rotation, float mass)
 {
@@ -40,8 +37,8 @@ void RigidBody::updatePhysics(glm::vec3 gravity, float timeStep)
 		return;
 	}
 	// adjust gravity based on ground state
-	glm::vec3 totalGavity(m_data.onGround ? glm::vec3(0.0f) : gravity);
-	applyForce(totalGavity * m_data.mass * timeStep);
+	glm::vec3 totalGravity(m_data.onGround ? glm::vec3(0.0f) : gravity);
+	applyForce(totalGravity * m_data.mass * timeStep);
 	
 	// apply drag
 	if (!m_data.isKinematic && !m_data.rotationLock) 
@@ -60,19 +57,22 @@ void RigidBody::updatePhysics(glm::vec3 gravity, float timeStep)
 		{
 			m_data.rotation.z = 0.0f;
 		}
-		else {
+		else 
+		{
 			m_data.rotation += m_data.angularVelocity * timeStep;
 		}
 	}
 	
 	// adjust velocity's to keep them in check
-	if (length(m_data.velocity) < MIN_LINEAR_THRESHOLD) {
+	if (length(m_data.velocity) < MIN_LINEAR_THRESHOLD) 
+	{
 		if (length(m_data.velocity) < length(gravity) * m_data.linearDrag * timeStep) {
 			m_data.velocity = glm::vec3(0.0f);
 		}
 	} 
 	
-	if (length(m_data.angularVelocity) < MIN_ROTATION_THRESHOLD) {
+	if (length(m_data.angularVelocity) < MIN_ROTATION_THRESHOLD) 
+	{
 		if (length(m_data.velocity) < length(m_data.angularVelocity)) {
 			m_data.angularVelocity = glm::vec3(0.0f);
 		}
@@ -101,20 +101,20 @@ void RigidBody::applyTorque(glm::vec3 force)
 	m_data.angularVelocity += force / m_data.mass;
 }
 
-void RigidBody::applyTorqueToAnotherBody(RigidBody* otherBody, glm::vec3 a_force)
+void RigidBody::applyTorqueToAnotherBody(RigidBody* otherBody, glm::vec3 force)
 {
 	if (!otherBody->m_data.onGround) {
-		otherBody->applyTorque(a_force);
+		otherBody->applyTorque(force);
 	}
 	if (!m_data.onGround) {
-		applyTorque(-a_force);
+		applyTorque(-force);
 	}
 }
 
 glm::vec3 RigidBody::predictPosition(float deltatime, float angle, float speed, glm::vec3 gravity)
 {
 	glm::vec3 result(0.0f);
-	glm::vec3 velocity(speed * cos(angle), speed * sin(angle), 0.0f);
+	glm::vec3 velocity(speed * cos(angle), speed * sin(angle), 0.0f); // z-axis =0.0f, only move on x,y axis
 	result = predictPosition(deltatime, velocity, gravity);
 	return result;
 }

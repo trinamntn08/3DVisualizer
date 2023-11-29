@@ -9,7 +9,7 @@
 #include "glm\gtc\type_ptr.hpp"
 #include "glm\gtx\transform.hpp"
 
-Box::Box(glm::vec3 position, glm::vec3 velocity, float mass, float size, glm::vec4 color, bool twoD)
+Box::Box(glm::vec3 position, glm::vec3 velocity, float mass, glm::vec3 size, glm::vec4 color, bool twoD)
 {
 	m_shapeID = BOX;
 	m_size = size;
@@ -18,7 +18,7 @@ Box::Box(glm::vec3 position, glm::vec3 velocity, float mass, float size, glm::ve
 	m_2D = twoD;
 }
 
-Box::Box(glm::vec3 position, float angle, float speed, float mass, float size, glm::vec4 color, bool twoD)
+Box::Box(glm::vec3 position, float angle, float speed, float mass, glm::vec3 size, glm::vec4 color, bool twoD)
 {
 	m_shapeID = BOX;
 	m_size = size;
@@ -37,63 +37,55 @@ void Box::updatePhysics(glm::vec3 gravity, float timeStep)
 	m_rigidbody->updatePhysics(gravity, timeStep);
 }
 
-
-/// testing AABB intersection with another AABB
-/// - uses the center point/radius method
 bool Box::checkCollision(PhysicsObject * other)
 {	
 	if (other->getShapeID() == BOX)
 	{
 		Box* box = dynamic_cast<Box*>(other);
-		// cache data
-		glm::vec3 thisPos = getPosition();
-		glm::vec3 otherPos = box->getPosition();
-		float otherSize = box->getSize();
+		glm::vec3 thisPos = this->GetPosition();
+		glm::vec3 otherPos = box->GetPosition();
+		glm::vec3 otherSize = box->GetSize();
+
 		// perform checks
-		if (abs(thisPos.x - otherPos.x) > (m_size + otherSize)) return false;
-		if (abs(thisPos.y - otherPos.y) > (m_size + otherSize)) return false;
-		if (abs(thisPos.z - otherPos.z) > (m_size + otherSize)) return false;
-		// return true is all checks pass
+		if (abs(thisPos.x - otherPos.x) > (m_size.x + otherSize.x)) return false;
+		if (abs(thisPos.y - otherPos.y) > (m_size.y + otherSize.y)) return false;
+		if (abs(thisPos.z - otherPos.z) > (m_size.z + otherSize.z)) return false;
 		return true;
 	}
 
 	if (other->getShapeID() == SPHERE)
 	{
 		Sphere* sphere = dynamic_cast<Sphere*>(other);
-		float radius = sphere->getRadius();
+		float radius = sphere->GetRadius();
 		// get the squared distance bewtween the center point and the AABB
-		float distance = distToPointAABB(sphere->getPosition());
-		// perform checks
-		if (distance > radius * radius) return false;
-		// return true is all checks pass
-		return true;
+		float distance = distPointToBox(sphere->GetPosition());
+
+		return distance > radius ? false : true;
 	}
 
 	return false;
 }
-/// Returns the distance between AABB and a given point/vector
-/// - distance is returned as a squred value, square root required for true distance
-float Box::distToPointAABB(glm::vec3 point)
+
+float Box::distPointToBox(glm::vec3 point)
 {
-	glm::vec3 center = getPosition();
+	glm::vec3 center = this->GetPosition();
 	float distance = 0.0f;
-	// setup min max values as we use radius system for AABB
-	glm::vec3 min(center.x - m_size, center.y - m_size, center.z - m_size);
-	glm::vec3 max(center.x + m_size, center.y + m_size, center.z + m_size);
-	// iterate through the point vector and compare it to min/max values
-	// - accumulate squared distance as we go
+
+	glm::vec3 min(center.x - m_size.x, center.y - m_size.y, center.z - m_size.z);
+	glm::vec3 max(center.x + m_size.x, center.y + m_size.y, center.z + m_size.z);
+
 	for (int i = 0; i < 3; i++)
 	{
 		float p = point[i];
 		if (p < min[i]) 
 		{
-			distance += (min[i] - p) * (min[i] - p);
+			distance += std::pow((min[i] - p),2);
 		}
 		if (p > max[i]) 
 		{
-			distance += (p - max[i]) * (p - max[i]);
+			distance += std::pow((p - max[i]),2);
 		}
 	}
-	return distance;
+	return std::sqrt(distance);
 }
 

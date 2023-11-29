@@ -1,6 +1,7 @@
 #include "Application.h"
-#include"Logger.h"
+#include "Logger.h"
 #include <glm/gtc/matrix_transform.hpp> 
+#include"PhysicsEngine/Sphere.h"
 
 Application* CreateApplication()
 {
@@ -112,9 +113,17 @@ void Application::Run()
         m_frameTime = currentFrame - m_lastFrameTime;
 
         DisplayFPS(currentFrame);
-        MoveObjects();
-        m_camera.OnUpdate(m_window, m_frameTime);
+        
 
+        // Reset scene
+        if (glfwGetKey(m_window, GLFW_KEY_SPACE) == GLFW_PRESS)
+        {
+            m_scene.ResetScene();
+        }
+
+        MoveObjects();
+
+        m_camera.OnUpdate(m_window, m_frameTime);
         m_scene.OnUpdate(m_frameTime);
        
         // render
@@ -132,7 +141,8 @@ void Application::Run()
         glm::mat4 projection = m_camera.GetProjectionMatrix();
         m_shader_scene.setMat_MVP(model, view, projection);
 
-        m_scene.RenderObjects(m_shader_scene,false);
+   //     m_scene.RenderObjects(m_shader_scene,false);
+        m_scene.RenderPhysicsObjects(m_shader_scene, false);
 
         // Render Cubemap
         glDepthFunc(GL_LEQUAL);
@@ -186,14 +196,15 @@ void Application::MoveObjects()
     static bool isObjectGrabbed = false;
     static glm::vec3 grabOffset;
     static Entity* grabbedObject = nullptr; // Track the currently grabbed object
-
+    
+    static PhysicsObject* grabbedPhysicsObject = nullptr; // Track the currently grabbed object
     // Click on objects
     if (m_mouseHandler.leftButton.isLeftPressed)
     {
         double mouseX, mouseY;
         glfwGetCursorPos(m_window, &mouseX, &mouseY);
         glm::vec2 mousePosition((float)mouseX, (float)mouseY);
-
+        /*
         for (Entity* item : m_scene.AllObjects())
         {
             glm::vec3 intersectPoint;
@@ -205,10 +216,10 @@ void Application::MoveObjects()
             if((hit && hitScene) || isObjectGrabbed)
             {
                 Log::info("Object Clicked!");
-               /* Log::info("Intersection Point: " +
+                Log::info("Intersection Point: " +
                             std::to_string(intersectPoint.x) + " " +
                             std::to_string(intersectPoint.y) + " " +
-                            std::to_string(intersectPoint.z));*/
+                            std::to_string(intersectPoint.z));
                 if (!isObjectGrabbed)
                 {
                     isObjectGrabbed = true;
@@ -246,7 +257,65 @@ void Application::MoveObjects()
                     item->SetPosition(newPos);
                 }
             }
+        }*/
+    
+        for (PhysicsObject* physicsItem : m_scene.AllPhysicsObjects())
+        {
+            if (Ball* item_box = dynamic_cast<Ball*>(physicsItem))
+            {
+                glm::vec3 intersectPoint;
+                bool hit = RayIntersectsBoundingBox(mousePosition, item_box->GetBoundingBox(), intersectPoint);
+
+                glm::vec3 clickedPtsOnScene;
+                bool hitScene = RayIntersectsBoundingBox(mousePosition, m_scene.getSceneBounds(), clickedPtsOnScene);
+
+                if ((hit && hitScene) || isObjectGrabbed)
+                {
+                    Log::info("Object Clicked!");
+                    Log::info("Intersection Point: " +
+                                std::to_string(intersectPoint.x) + " " +
+                                std::to_string(intersectPoint.y) + " " +
+                                std::to_string(intersectPoint.z));
+                    if (!isObjectGrabbed)
+                    {
+                        isObjectGrabbed = true;
+                        //    grabOffset = intersectPoint - item->GetPosition();
+                        grabOffset = clickedPtsOnScene - item_box->GetPosition();
+                        grabbedPhysicsObject = item_box;
+                    }
+
+                    if (isObjectGrabbed && grabbedPhysicsObject == item_box)
+                    {
+                        Log::info(item_box->GetInfo());
+
+
+                        const BoundingBox& bbox_item = item_box->GetBoundingBox();
+
+                        // Check for collisions with other objects in the scene
+                        /*bool collisionDetected = BoundingBox::CheckCollision(bbox_item, m_scene.getSceneBounds());
+
+                        if (collisionDetected)
+                        {
+                            Log::info("Object on the scene!!!");
+                        }*/
+
+                        glm::vec3 newTarget(clickedPtsOnScene.x - grabOffset.x,
+                            clickedPtsOnScene.y - grabOffset.y,
+                            clickedPtsOnScene.z - grabOffset.z);
+
+                        // Ensure the object stays above the scene
+                        float minY = m_scene.getSceneBounds().GetMaxBounds().y + bbox_item.GetDimensions().y / 2.0f;
+                        newTarget.y = std::max(newTarget.y, minY);
+                        // Smoothly move the object
+                        static float moveSpeed = 0.05f;
+                        glm::vec3 newPos = glm::mix(item_box->GetPosition(), newTarget, moveSpeed);
+
+                        item_box->SetPosition(newPos);
+                    }
+                }
+            }
         }
+
     }
     else
     {

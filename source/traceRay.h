@@ -2,23 +2,24 @@
 
 #include <glm/glm.hpp>
 #include"boundingBox.h"
+
 struct Ray
 {
 	glm::vec3 Origin;
 	glm::vec3 Direction;
 };
 
-struct Plane
+struct Plane_
 {
 	glm::vec3 normal;
 	glm::vec3 point;
 
 	// Constructor to define a plane using a normal vector and a point
-	Plane(const glm::vec3& normal, const glm::vec3& point) :
+	Plane_(const glm::vec3& normal, const glm::vec3& point) :
 		normal(glm::normalize(normal)), point(point) {}
 
 	// Constructor to define a plane using a point and two vectors in the plane
-	Plane(const glm::vec3& point, const glm::vec3& v1, const glm::vec3& v2)
+	Plane_(const glm::vec3& point, const glm::vec3& v1, const glm::vec3& v2)
 	{
 		normal = glm::normalize(glm::cross(v1, v2));
 		this->point = point;
@@ -47,7 +48,7 @@ static glm::vec3 projectOntoGround(const glm::vec3& originalPosition, const glm:
 	return originalPosition + projectedVector;
 }
 
-static bool RayIntersectsPlane(const Ray& ray, Plane& plane, glm::vec3& intersectPts)
+static bool RayIntersectsPlane(const Ray& ray, Plane_& plane, glm::vec3& intersectPts)
 {
 	// Check if the ray and plane are not parallel
 	float denom = glm::dot(ray.Direction, plane.normal);

@@ -58,7 +58,8 @@ private:
 
 	//Shaders
 	Shader m_shader_scene;
-	Shader m_shader_cubemap;
+	Shader m_shader_skyBox;
+	Shader m_shader_terrain;
 
 	Camera m_camera;
 	Scene m_scene;

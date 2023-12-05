@@ -1,20 +1,22 @@
 #pragma once
-#include"Entity.h"
 
-const std::string environmentPath = std::string("source/resources/cube/cube.gltf");
+#include"PhysicsEngine/Box.h"
+#include"SkyBox.h"
+#include"Terrain.h"
+
+
+const std::string cubePath = std::string("source/resources/cube/cube.gltf");
 const std::string spiderPath = std::string("source/resources/spider/spider.obj");
 const std::string ballPath = std::string("source/resources/ball/ball.obj");
-std::vector<Texture> LoadCubeMapTextures(std::vector<std::string> textures_faces);
 
 struct PhysicsProperties
 {
-    bool gravity = false;
+    bool gravity = true;
     bool collisions = true;
     bool collisionResponse = true;
 };
 
 
-class Ball;
 class Scene 
 {
 public:
@@ -23,22 +25,11 @@ public:
     void loadScene();
     void OnUpdate(float deltaTime);
 
-    // Render scene
-    void RenderObjects(Shader& shader,bool isRender_BBoxes =false);
-    void RenderEnvironment(Shader& shader_environement);
-
     void InitializeCubes(const std::string& filePath);
-    inline std::vector<Entity*>& getCubes(){ return m_cubes;}
-
-    Mesh* InitializeEnvironment();
-
-    void UpdateEntityToFitScene(Entity& entity);
 
     // bounding box
     void CalculateSceneBounds();
     inline const BoundingBox& getSceneBounds() const { return m_sceneBounds;}
-
-    inline std::vector<Entity*> AllObjects() { return m_allObjects;};
 
     void setGravity(const glm::vec3 gravity) { m_gravity = gravity; }
     glm::vec3 getGravity() const { return m_gravity; }
@@ -46,10 +37,15 @@ public:
 
     // PHYSICS OBJECTS
     inline std::vector<PhysicsObject*> AllPhysicsObjects() { return m_allPhysicsObjects; };
-    inline void UpdatePhysicsObjectToFitScene(PhysicsObject& entity);
+    void UpdateAllObjectsToFitScene();
+    void UpdatePhysicsObjectToFitScene(PhysicsObject& object);
     inline int numberOfObjects() { return m_allPhysicsObjects.size();};
 
+
+    void Render();
     void RenderPhysicsObjects(Shader & shader, bool isRender_BBoxes = false);
+    void RenderSkyBox(Shader& shader_skyBox);
+    void RenderTerrain(Shader& shader_terrain);
 
     void ResetScene();
     void ClearScene();
@@ -75,17 +71,15 @@ public:
     PhysicsProperties m_properties;
 
 private:
-   
-  /*  Entity* m_ball1=nullptr;
-    Entity* m_ball2 = nullptr;
-    Entity* m_spider = nullptr;*/
 
-    std::vector<Entity*> m_allObjects;
     std::vector<PhysicsObject*> m_allPhysicsObjects;
-
-    std::vector<Entity*> m_cubes;
+    std::vector<BoxModel*> m_grounds;
     BoundingBox m_sceneBounds;
-    Mesh* m_environment = nullptr;
 
-    glm::vec3 m_gravity = glm::vec3(0.f);
+    Skybox* m_skyBox=nullptr;
+
+    BaseTerrain* m_terrain = nullptr;
+
+
+    glm::vec3 m_gravity = glm::vec3(0.f,-3.0f,0.0f);
 };

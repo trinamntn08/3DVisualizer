@@ -17,6 +17,7 @@ class PhysicsObject
 protected:
 	PhysicsObject() {};
 	PhysicsObject(ShapeType shapeID) : m_shapeID(shapeID) {}
+	void Copy(const PhysicsObject& other);
 public:
 	virtual ~PhysicsObject()
 	{
@@ -40,6 +41,7 @@ public:
 	virtual void SetPosition(glm::vec3 position);
 	virtual void SetVelocity(glm::vec3 velocity);
 	virtual void SetRotation(glm::vec3 rotation);
+	virtual void SetMass(float mass);
 
 	void SetOriginalPosition(glm::vec3 position);
 	void SetCurrentPosAsOriginalPos();

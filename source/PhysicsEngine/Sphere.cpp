@@ -27,7 +27,7 @@ void Sphere::UpdatePhysics(glm::vec3 gravity, float timeStep)
 
 /////////////////////////////////////////////////////////////////
 
-Ball::Ball(const std::string& pathToModel, const glm::vec3& position,
+SphereModel::SphereModel(const std::string& pathToModel, const glm::vec3& position,
     glm::vec3 velocity, float mass, 
     const glm::vec3& scale, float radius):Sphere(position,velocity,mass,radius)
 {
@@ -37,19 +37,11 @@ Ball::Ball(const std::string& pathToModel, const glm::vec3& position,
     SetRadius(bbox_radius);
 }
 
-//Ball::Ball(Model* model, const glm::vec3& position,
-//    const glm::vec3& rotation, const glm::vec3& scale) :
-//    Spher, m_scale(scale)
-//{
-//    ComputeBoundingBox();
-//}
-
-
-void Ball::LoadModel(const std::string& pathToModel)
+void SphereModel::LoadModel(const std::string& pathToModel)
 {
-    m_model = new Model(pathToModel);
+    m_model = std::make_unique<Model>(pathToModel);
 }
-void Ball::Render(Shader& shader)
+void SphereModel::Render(Shader& shader)
 {
     if (!m_model)
         return;
@@ -73,14 +65,14 @@ void Ball::Render(Shader& shader)
     m_model->Render(shader);
 }
 
-void Ball::UpdatePhysics(glm::vec3 gravity, float timeStep)
+void SphereModel::UpdatePhysics(glm::vec3 gravity, float timeStep)
 {
     m_rigidbody->updatePhysics(gravity, timeStep);
     auto velocity = GetVelocity();
     UpdateBoundingBox(velocity * timeStep);
 }
 
-void Ball::ComputeBoundingBox()
+void SphereModel::ComputeBoundingBox()
 {
     if (m_model->meshes.empty())
     {
@@ -115,12 +107,12 @@ void Ball::ComputeBoundingBox()
     m_bbox.setMaxBound(maxBound_temp);
 }
 
-void Ball::UpdateBoundingBox(glm::vec3 deltaPos)
+void SphereModel::UpdateBoundingBox(glm::vec3 deltaPos)
 {
     m_bbox.Move(deltaPos);
 }
 
-void Ball::SetPosition(const glm::vec3& newPosition)
+void SphereModel::SetPosition(const glm::vec3& newPosition)
 {
     glm::vec3 pos = GetPosition();
     glm::vec3 deltaPos = newPosition - pos;
@@ -128,19 +120,19 @@ void Ball::SetPosition(const glm::vec3& newPosition)
     UpdateBoundingBox(deltaPos);
 }
 
-void Ball::Translation(const glm::vec3&& deltaPos)
+void SphereModel::Translation(const glm::vec3&& deltaPos)
 {
-    glm::vec3 newPos = GetPosition()+ deltaPos;
+    glm::vec3 newPos = GetPosition() + deltaPos;
     Sphere::SetPosition(newPos);
     UpdateBoundingBox(deltaPos);
 }
 
-std::string Ball::GetInfo()
+std::string SphereModel::GetInfo()
 {
     auto position = GetPosition();
     auto rotation = GetRotation();
     std::stringstream ss;
-    ss << "Ball Position: " << std::to_string(position.x) << " " <<
+    ss << "SphereModel Position: " << std::to_string(position.x) << " " <<
         std::to_string(position.y) << " " <<
         std::to_string(position.z) << "\n ";
 

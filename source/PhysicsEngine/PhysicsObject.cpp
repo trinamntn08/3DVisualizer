@@ -1,7 +1,20 @@
 #include "PhysicsObject.h"
 #include "RigidBody.h"
 
+void PhysicsObject::Copy(const PhysicsObject& other)
+{
+	// Copy member variables
+	m_shapeID = other.m_shapeID;
+	m_2D = other.m_2D;
 
+	// Copy RigidBody if it exists
+	if (other.m_rigidbody != nullptr) {
+		m_rigidbody = new RigidBody(*other.m_rigidbody);
+	}
+	else {
+		m_rigidbody = nullptr;
+	}
+}
 glm::vec3 PhysicsObject::GetPosition()
 {
 	return m_rigidbody != nullptr ? m_rigidbody->m_data.position : glm::vec3(0.0f);
@@ -49,6 +62,14 @@ void PhysicsObject::SetRotation(glm::vec3 rotation)
 		m_rigidbody->m_data.rotation = rotation;
 	}
 }
+void PhysicsObject::SetMass(float mass)
+{
+	if (m_rigidbody != nullptr)
+	{
+		m_rigidbody->m_data.mass = mass;
+	}
+}
+
 void PhysicsObject::SetOriginalPosition(glm::vec3 position)
 {
 	if (m_rigidbody != nullptr)

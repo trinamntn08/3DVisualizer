@@ -6,7 +6,14 @@
 class Mesh;
 class Model;
 
-class BoundingBox 
+enum class BBoxType 
+{
+    Box=0,
+    Sphere=1
+};
+
+
+class BoundingBox
 {
 public:
     BoundingBox();

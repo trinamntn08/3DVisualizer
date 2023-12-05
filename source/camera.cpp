@@ -1,5 +1,6 @@
 #include"camera.h"
 #include <glad/glad.h>
+#include"Logger.h"
 Camera::Camera(float verticalFOV, float nearClip, float farClip)
 	: m_VerticalFOV(verticalFOV), m_NearClip(nearClip), m_FarClip(farClip)
 {
@@ -26,8 +27,7 @@ bool Camera::OnUpdate(GLFWwindow* window,float deltaTime)
 	constexpr glm::vec3 upDirection(0.0f, 1.0f, 0.0f);
 	glm::vec3 rightDirection = glm::cross(m_ForwardDirection, upDirection);
 
-	float speed = 12.0f;
-	float velocity = speed * deltaTime;
+	float velocity = SPEED * deltaTime;
 	//Mouse
 	if(glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS)
 	{
@@ -106,6 +106,21 @@ bool Camera::OnUpdate(GLFWwindow* window,float deltaTime)
 	{
 		m_Position += upDirection * velocity;
 		moved = true;
+	}
+	else if (glfwGetKey(window, GLFW_KEY_Z) == GLFW_PRESS)
+	{
+		Log::info("Presse Z !!!");
+		isWireFrame = !isWireFrame;
+		if (isWireFrame)
+		{
+			// draw in wireframe
+			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		}
+		else
+		{
+			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		}
+		
 	}
 	else if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 	{

@@ -14,7 +14,8 @@ using namespace std;
 
 #define MAX_BONE_INFLUENCE 4
 
-struct Vertex {
+struct Vertex 
+{
     glm::vec3 Position;
     glm::vec3 Normal;
     glm::vec2 TexCoords;
@@ -26,7 +27,8 @@ struct Vertex {
 	float m_Weights[MAX_BONE_INFLUENCE];
 };
 
-struct Texture {
+struct Texture 
+{
     unsigned int id;
     string type;
     string path;
@@ -42,9 +44,9 @@ public:
     Mesh();
     Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<Texture> textures);
     ~Mesh();
-    // render the mesh
+
     void Render(Shader& shader);
-    void RenderSky(Shader& shader);
+
 
 
 private:

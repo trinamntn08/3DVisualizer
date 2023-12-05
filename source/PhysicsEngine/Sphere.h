@@ -4,6 +4,8 @@
 #include"..\boundingBox.h"
 #include"PhysicsObject.h"
 
+#include<memory>
+
 class Sphere :public PhysicsObject
 {
 public:
@@ -25,12 +27,12 @@ private:
 };
 
 
-class Ball : public Sphere
+class SphereModel : public Sphere
 {
 public:
-	Ball() = default;
+	SphereModel() = default;
 
-	Ball(const std::string& pathToModel, const glm::vec3& position = glm::vec3(0.0f),
+	SphereModel(const std::string& pathToModel, const glm::vec3& position = glm::vec3(0.0f),
 		glm::vec3 velocity = glm::vec3(1.0f, 0.0f, 0.0f),
 		float mass = 10.f, const glm::vec3& scale = glm::vec3(1.0f),
 		float radius= 10.f);
@@ -39,13 +41,9 @@ public:
 	//const glm::vec3& rotation = glm::vec3(0.0f),
 	//const glm::vec3& scale = glm::vec3(1.0f));
 
-	virtual ~Ball()
-	{
-		if (m_model != nullptr) 
-		{
-			delete m_model;
-		}
-	}
+	virtual ~SphereModel() {};
+
+	void UpdatePhysics(glm::vec3 gravity, float timeStep);
 
 	std::string GetInfo();
 	
@@ -56,16 +54,13 @@ public:
 //	void SetRotation(const glm::vec3& newRotation);
 //	inline glm::vec3 GetRotation() const { return m_rotation; }
 
-	void UpdatePhysics(glm::vec3 gravity, float timeStep);
-
-
 	inline void SetScale(const glm::vec3& newScale) { m_scale = newScale; }
 	inline glm::vec3 GetScale() const { return m_scale; }
 	
 	void Translation(const glm::vec3&& deltaPos = glm::vec3(0.0f));
 
-	inline void SetModel(Model* model) { m_model = model; }
-	inline Model* GetModel() const { return m_model; }
+	inline void SetModel(Model* model) { m_model.reset(model); }
+	inline const unique_ptr<Model>& GetModel() const { return m_model; }
 
 	void Render(Shader& shader);
 
@@ -75,7 +70,7 @@ public:
 	BoundingBox GetBoundingBox() { return m_bbox; };
 
 private:
-	Model* m_model = nullptr;
+	unique_ptr<Model> m_model = nullptr;
 	void LoadModel(const std::string& pathToModel);
 	glm::vec3 m_scale = glm::vec3(1.0f);
 	BoundingBox m_bbox;

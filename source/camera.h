@@ -22,7 +22,7 @@ enum Camera_Movement {
 // Default camera values
 const float YAW         = -90.0f;
 const float PITCH       =  0.0f;
-const float SPEED       =  20.0f;
+const float SPEED       =  40.0f;
 const float SENSITIVITY =  200.0f;
 const float ZOOM        =  45.0f;
 
@@ -74,6 +74,8 @@ private:
 	bool firstClick = true;
 
 	int m_ViewportWidth = 800, m_ViewportHeight = 600;
+
+	bool isWireFrame = false;
 };
 
 #endif

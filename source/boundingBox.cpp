@@ -1,6 +1,5 @@
 #include "boundingBox.h"
 #include "mesh.h"
-//#include"model.h"
 
 BoundingBox::BoundingBox()
 {

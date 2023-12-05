@@ -15,12 +15,12 @@ struct RigidBodyData
 	glm::mat4 rotationTransform = glm::mat4(1);
 
 	float scale = 1.0f;
-	float mass = 10.0f;
+	float mass = 1.0f;
 
 	bool onGround = false;
 	bool isStatic = false; // immovable
 
-	bool isKinematic = true;
+	bool isKinematic = false;
 
 	bool rotationLock = true;
 
@@ -28,7 +28,7 @@ struct RigidBodyData
 	float linearDrag = 1.0f;	// 1.0f equals no drag
 	float angularDrag = 0.45f;	// 1.0f equals no drag
 
-	float elasticity = 0.5f;	// lower numbers are force absorbant
+	float elasticity = 0.1f;	// lower numbers are force absorbant
 
 };
 

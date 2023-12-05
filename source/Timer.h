@@ -1,12 +1,24 @@
 #pragma once
 
 #include <chrono>
-
+#include<string>
+#include"Logger.h"
 class Timer
 {
 public:
-    Timer() : m_startTime(std::chrono::high_resolution_clock::now()) {}
+    explicit Timer() :m_startTime(std::chrono::high_resolution_clock::now()) {};
 
+    Timer(const std::string& name_Object) : m_startTime(std::chrono::high_resolution_clock::now()),
+        m_nameFunction(name_Object){};
+    
+    ~Timer()
+    {
+        std::string msg= m_nameFunction+ "....excecuted in  ";
+        float time_excuted = GetTotalTime()*1000;
+        msg += std::to_string(time_excuted);
+        msg += " ms";
+        Log::info(msg);
+    }
     // Update the time and calculate delta time
     void Update()
     {
@@ -28,6 +40,7 @@ public:
     }
 
 private:
+    std::string m_nameFunction;
     std::chrono::time_point<std::chrono::high_resolution_clock> m_startTime;
     std::chrono::time_point<std::chrono::high_resolution_clock> m_lastTime;
     float m_deltaTime=0.0f;

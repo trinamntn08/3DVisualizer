@@ -2,6 +2,7 @@
 #include "Logger.h"
 #include <glm/gtc/matrix_transform.hpp> 
 #include"PhysicsEngine/Sphere.h"
+#include"Timer.h"
 
 Application* CreateApplication()
 {
@@ -11,12 +12,10 @@ Application* CreateApplication()
 }
 
 Application::Application(const AppSpecification& appSpec):
-    m_spec(appSpec),m_camera(Camera(45.0f, 0.1f, 100.0f))
+    m_spec(appSpec),m_camera(Camera(45.0f, 0.1f, 1000.0f))
 {
     Init();
     InitShader();
-    // draw in wireframe
-   // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 }
 
 Application::~Application()
@@ -95,16 +94,17 @@ void Application::InitShader()
     // tell stb_image.h to flip loaded texture's on the y-axis (before loading model).
     stbi_set_flip_vertically_on_load(true);
 
-    m_shader_scene = Shader("source/shaders/vertex_core.glsl", "source/shaders/fragment_core.glsl");
-    m_shader_cubemap = Shader("source/shaders/skybox_vertex.glsl", "source/shaders/skybox_fragment.glsl");
+    m_shader_scene = Shader("source/shaders/core_vertex.glsl", "source/shaders/core_fragment.glsl");
+    m_shader_skyBox = Shader("source/shaders/skybox_vertex.glsl", "source/shaders/skybox_fragment.glsl");
+    m_shader_terrain = Shader("source/shaders/terrain_vertex.glsl", "source/shaders/terrain_fragment.glsl");
 }
 
 void Application::Run()
 {
-	m_running = true;
+    m_running = true;
     m_scene.loadScene();
-    m_camera.LookAtBoundingBox(m_scene.getSceneBounds());
-
+ //   m_camera.LookAtBoundingBox(m_scene.getSceneBounds());
+    
     // render loop
     while (!glfwWindowShouldClose(m_window))
     {
@@ -112,8 +112,7 @@ void Application::Run()
         float currentFrame = (float)glfwGetTime();
         m_frameTime = currentFrame - m_lastFrameTime;
 
-        DisplayFPS(currentFrame);
-        
+        DisplayFPS(currentFrame);     
 
         // Reset scene
         if (glfwGetKey(m_window, GLFW_KEY_SPACE) == GLFW_PRESS)
@@ -141,21 +140,31 @@ void Application::Run()
         glm::mat4 projection = m_camera.GetProjectionMatrix();
         m_shader_scene.setMat_MVP(model, view, projection);
 
-   //     m_scene.RenderObjects(m_shader_scene,false);
         m_scene.RenderPhysicsObjects(m_shader_scene, false);
 
-        // Render Cubemap
+        // Render skyBox
         glDepthFunc(GL_LEQUAL);
-        m_shader_cubemap.activate();
-        // view/projection transformations
-        glm::mat4 model_cubemap = glm::mat4(1.0f);
-        glm::mat4 view_cubemap = m_camera.GetViewMatrix();
-        glm::mat4 projection_cubemap = m_camera.GetProjectionMatrix();
-        m_shader_cubemap.setMat_MVP(model_cubemap, view_cubemap, projection_cubemap);
+        m_shader_skyBox.activate();
 
-        m_scene.RenderEnvironment(m_shader_cubemap);
+        glm::mat4 model_skyBox = glm::mat4(1.0f);
+        glm::mat4 view_skyBox = m_camera.GetViewMatrix();
+        glm::mat4 projection_skyBox = m_camera.GetProjectionMatrix();
+        m_shader_skyBox.setMat_MVP(model_skyBox, view_skyBox, projection_skyBox);
 
+        m_scene.RenderSkyBox(m_shader_skyBox);
         glDepthFunc(GL_LESS);
+
+        // Render terrain
+
+        m_shader_terrain.activate();
+
+        glm::mat4 model_terrain = glm::mat4(1.0f);
+        glm::mat4 view_terrain = m_camera.GetViewMatrix();
+        glm::mat4 projection_terrain = m_camera.GetProjectionMatrix();
+        m_shader_terrain.setMat_MVP(model_terrain, view_terrain, projection_terrain);
+
+        m_scene.RenderTerrain(m_shader_terrain);
+
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
         glfwSwapBuffers(m_window);
@@ -195,8 +204,6 @@ void Application::MoveObjects()
 {
     static bool isObjectGrabbed = false;
     static glm::vec3 grabOffset;
-    static Entity* grabbedObject = nullptr; // Track the currently grabbed object
-    
     static PhysicsObject* grabbedPhysicsObject = nullptr; // Track the currently grabbed object
     // Click on objects
     if (m_mouseHandler.leftButton.isLeftPressed)
@@ -204,64 +211,10 @@ void Application::MoveObjects()
         double mouseX, mouseY;
         glfwGetCursorPos(m_window, &mouseX, &mouseY);
         glm::vec2 mousePosition((float)mouseX, (float)mouseY);
-        /*
-        for (Entity* item : m_scene.AllObjects())
-        {
-            glm::vec3 intersectPoint;
-            bool hit = RayIntersectsBoundingBox(mousePosition, item->GetBoundingBox(), intersectPoint);
-
-            glm::vec3 clickedPtsOnScene;
-            bool hitScene = RayIntersectsBoundingBox(mousePosition, m_scene.getSceneBounds(), clickedPtsOnScene);
-
-            if((hit && hitScene) || isObjectGrabbed)
-            {
-                Log::info("Object Clicked!");
-                Log::info("Intersection Point: " +
-                            std::to_string(intersectPoint.x) + " " +
-                            std::to_string(intersectPoint.y) + " " +
-                            std::to_string(intersectPoint.z));
-                if (!isObjectGrabbed)
-                {
-                    isObjectGrabbed = true;
-                    //    grabOffset = intersectPoint - item->GetPosition();
-                    grabOffset = clickedPtsOnScene - item->GetPosition();
-                    grabbedObject = item;
-                }
-
-                if (isObjectGrabbed && grabbedObject == item)
-                {
-                    Log::info(item->getInfo());
-
-
-                    const BoundingBox& bbox_item = item->GetBoundingBox();
-
-                    // Check for collisions with other objects in the scene
-                    bool collisionDetected = BoundingBox::CheckCollision(bbox_item, m_scene.getSceneBounds());
-
-                    if (collisionDetected)
-                    {
-                        Log::info("Object on the scene!!!");
-                    }
-
-                    glm::vec3 newTarget(clickedPtsOnScene.x - grabOffset.x,
-                                        clickedPtsOnScene.y - grabOffset.y,
-                                        clickedPtsOnScene.z - grabOffset.z);
-
-                    // Ensure the object stays above the scene
-                    float minY = m_scene.getSceneBounds().GetMaxBounds().y + bbox_item.GetDimensions().y / 2.0f;
-                    newTarget.y = std::max(newTarget.y, minY);
-                    // Smoothly move the object
-                    static float moveSpeed = 0.05f;
-                    glm::vec3 newPos = glm::mix(item->GetPosition(), newTarget, moveSpeed);
-
-                    item->SetPosition(newPos);
-                }
-            }
-        }*/
-    
+  
         for (PhysicsObject* physicsItem : m_scene.AllPhysicsObjects())
         {
-            if (Ball* item_box = dynamic_cast<Ball*>(physicsItem))
+            if (BoxModel* item_box = dynamic_cast<BoxModel*>(physicsItem))
             {
                 glm::vec3 intersectPoint;
                 bool hit = RayIntersectsBoundingBox(mousePosition, item_box->GetBoundingBox(), intersectPoint);

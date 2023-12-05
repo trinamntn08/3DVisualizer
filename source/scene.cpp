@@ -1,12 +1,13 @@
 #include"scene.h"
 #include"traceRay.h"
-#include"Logger.h"
 #include"PhysicsEngine/RigidBody.h"
 #include"PhysicsEngine/Sphere.h"
 #include"PhysicsEngine/Plane.h"
 #include"PhysicsEngine/Box.h"
 #include <glm/gtx/projection.hpp>
 #include <glm/gtx/perpendicular.hpp>
+#include"Timer.h"
+#include"Logger.h"
 
 typedef bool(*fn)(PhysicsObject*, PhysicsObject*);
 
@@ -19,60 +20,42 @@ static fn collisionFuncs[] =
 
 Scene::~Scene()
 {
-    for (auto& item : m_cubes)
-    {
-        delete item;
-    }
-
-    for (auto& item : m_allObjects)
-    {
-        delete item;
-    }
-
     for (auto& item : m_allPhysicsObjects)
     {
         delete item;
     }
 
-    delete m_environment;
+	delete m_skyBox;
 }
 
 void Scene::loadScene()
 {
-    InitializeCubes(environmentPath);
-    CalculateSceneBounds();
+	Timer("loadScene");
+ //   InitializeCubes(cubePath);
+ //   CalculateSceneBounds();
 
-   /* m_spider = new Entity(spiderPath, glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(0.02f));
-    m_ball1 = new Entity(ballPath, glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(1.f));
-    m_ball2 = new Entity(ballPath, glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(1.f));
-   
-    m_allObjects.push_back(m_spider);
-    m_allObjects.push_back(m_ball1);
-    m_allObjects.push_back(m_ball2);
+	//SphereModel* ball1 = new SphereModel(ballPath, glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+	//SphereModel* ball2 = new SphereModel(ballPath, glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+	//SphereModel* ball3 = new SphereModel(ballPath, glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+ //   
+ //   m_allPhysicsObjects.push_back(ball1);
+ //   m_allPhysicsObjects.push_back(ball2);
+	//m_allPhysicsObjects.push_back(ball3);
 
-    UpdateEntityToFitScene(*m_spider);
-    UpdateEntityToFitScene(*m_ball1);
-    UpdateEntityToFitScene(*m_ball2);
+	//UpdateAllObjectsToFitScene();
 
-    m_ball1->Translation(glm::vec3(-5.0f, 0.0f, 0.0f));
-    m_ball2->Translation(glm::vec3(5.0f, 0.0f, 0.0f)); */
+	//ball1->Translation(glm::vec3(3.0f, 5.0f, 3.0f));
+	//ball2->Translation(glm::vec3(-3.0f, 7.0f, 3.0f));
+	//ball3->Translation(glm::vec3(0.0f, 4.0f, 3.0f));
 
-	Ball* ball1 = new Ball(ballPath, glm::vec3(0.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-	Ball* ball2 = new Ball(ballPath, glm::vec3(0.0f), glm::vec3(-1.0f, 0.0f, 0.0f));
-    
-    UpdatePhysicsObjectToFitScene(*ball1);
-    UpdatePhysicsObjectToFitScene(*ball2);
-    
-	ball1->Translation(glm::vec3(4.0f, 0.0f, 2.0f));
-	ball2->Translation(glm::vec3(-4.0f, 0.0f, 2.0f));
+ //   ball1->SetCurrentPosAsOriginalPos();
+	//ball2->SetCurrentPosAsOriginalPos();
+	//ball3->SetCurrentPosAsOriginalPos();
 
-    m_allPhysicsObjects.push_back(ball1);
-    m_allPhysicsObjects.push_back(ball2);
+	m_skyBox = new Skybox();
 
-    ball1->SetCurrentPosAsOriginalPos();
-	ball2->SetCurrentPosAsOriginalPos();
+	m_terrain = new BaseTerrain();
 
-    m_environment = InitializeEnvironment();
 }
 void  Scene::ResetScene()
 {
@@ -81,22 +64,40 @@ void  Scene::ResetScene()
     {
         item->ResetPosition();
         item->ResetVelocity();
-		Ball* ball_item = dynamic_cast<Ball*>(item);
+		SphereModel* ball_item = dynamic_cast<SphereModel*>(item);
 		if (ball_item)
 		{
 			ball_item->ComputeBoundingBox();
 		}
     }
+
+	// reset all cubes's position and velocity
+	for (auto& item : m_grounds)
+	{
+		item->ResetPosition();
+		item->ResetVelocity();
+		BoxModel* box_item = dynamic_cast<BoxModel*>(item);
+		if (box_item)
+		{
+			box_item->ComputeBoundingBox();
+		}
+	}
 }
 void  Scene::ClearScene()
 {
     m_allPhysicsObjects.clear();
 }
-
+void Scene::UpdateAllObjectsToFitScene()
+{
+	for (auto& item : m_allPhysicsObjects)
+	{
+		UpdatePhysicsObjectToFitScene(*item);
+	}
+}
 void Scene::UpdatePhysicsObjectToFitScene(PhysicsObject& object)
 {
-    Ball* box = dynamic_cast<Ball*>(&object);
-    // Move spider to center of scene
+	SphereModel* box = dynamic_cast<SphereModel*>(&object);
+
     glm::vec3 sceneBoundsCenter = m_sceneBounds.GetCenter();
     const BoundingBox& model_bbox = box->GetBoundingBox();
     glm::vec3 bboxCenter = model_bbox.GetCenter();
@@ -105,24 +106,13 @@ void Scene::UpdatePhysicsObjectToFitScene(PhysicsObject& object)
     // Adjust the y-axis of spider to move it above the scene
     float yOffset = m_sceneBounds.GetMaxBounds().y - model_bbox.GetMinBounds().y;
     modelMove.y = yOffset;
-
     box->SetPosition(modelMove);
 }
 void Scene::OnUpdate(float deltaTime)
 {
-	/*  m_ball1->OnMove(deltaTime);
- //   m_ball2->OnMove(deltaTime/3);
-    if (BoundingBox::CheckCollision(m_ball1->GetBoundingBox(), m_ball2->GetBoundingBox()))
-    {
-        Log::info("Objects Collision!");
-        Log::info(m_ball1->getInfo());
-        Log::info(m_ball2->getInfo());
-        Entity::performCollision(*m_ball1, *m_ball2);
-    }*/
-
 	for (auto& item : AllPhysicsObjects())
 	{
-		item->UpdatePhysics(glm::vec3(0.0f), deltaTime);
+		item->UpdatePhysics(m_properties.gravity ? m_gravity : glm::vec3(0.0f), deltaTime);
 	}
 
 	// check for collisions
@@ -134,81 +124,94 @@ void Scene::OnUpdate(float deltaTime)
 
 void Scene::InitializeCubes(const std::string &filePath)
 {
-    m_cubes.clear();
+	m_grounds.clear();
     // Load the cube model from Model class
-    int numRows = 20; 
-    int numCols = 20; 
-    float spacing = 2.5f; // Spacing between cubes
+    int numRows = 10; 
+    int numCols = 10; 
+    float spacing = 0.0f; // Spacing between cubes
+	float cubeSize = 2.0f;
 
-    // Create cubes arranged in a square grid
-    for (int row = 0; row < numRows; row++) {
-        for (int col = 0; col < numCols; col++) {
-            Entity* cube_i = new Entity(filePath);
-            glm::vec3 position(col * spacing, 0.0f, row * spacing);
-            cube_i->SetPosition(position);
-            m_cubes.push_back(cube_i);
-        }
-    }
+	// bottom walls
+	for (int row = 0; row < numRows; row++) {
+		for (int col = 0; col < numCols; col++) {
+			BoxModel* cube_i = new BoxModel(filePath);
+			glm::vec3 position(col * (spacing + cubeSize), 0.0f, row* (spacing + cubeSize));
+			cube_i->SetPosition(position);
+			cube_i->SetCurrentPosAsOriginalPos();
+			m_grounds.push_back(cube_i);
+		}
+	}
+	/*
+	// top walls
+	for (int row = 0; row < numRows; row++) {
+		for (int col = 0; col < numCols; col++) {
+			BoxModel* cube_i = new BoxModel(filePath);
+			glm::vec3 position(col * (spacing + cubeSize), numCols * (spacing + cubeSize), row * (spacing + cubeSize));
+			cube_i->SetPosition(position);
+			m_grounds.push_back(cube_i);
+		}
+	}
+
+	// left walls
+	for (int row = 0; row < numRows; row++) {
+		for (int col = 0; col < numCols+1; col++) {
+			BoxModel* cube_i = new BoxModel(filePath);
+			glm::vec3 position( 0.0f, col * (spacing + cubeSize), row * (spacing + cubeSize));
+			cube_i->SetPosition(position);
+			m_grounds.push_back(cube_i);
+		}
+	}
+
+	//right walls
+	for (int row = 0; row < numRows; row++) {
+		for (int col = 0; col < numCols+1; col++) {
+			BoxModel* cube_i = new BoxModel(filePath);
+			glm::vec3 position(numCols * (spacing + cubeSize), col * (spacing + cubeSize), row * (spacing + cubeSize));
+			cube_i->SetPosition(position);
+			m_grounds.push_back(cube_i);
+		}
+	}
+
+	diagonal walls
+	for (int row = 0; row < numRows; row++) {
+		for (int col = 0; col < numCols; col++) {
+			Cube* cube_i = new Cube(filePath);
+			glm::vec3 position(col * spacing, col * spacing, row * spacing);
+			cube_i->SetPosition(position);
+			m_grounds.push_back(cube_i);
+		}
+	}
+	*/
+
 }
 
 void Scene::CalculateSceneBounds()
 {
-    m_sceneBounds.Reset();
-    for (const Entity* cube : m_cubes) 
-    {
-        const BoundingBox& cubeBounds = cube->GetBoundingBox();
-        m_sceneBounds.ExpandToInclude(cubeBounds);
-    }
-}
-void Scene::UpdateEntityToFitScene(Entity& entity)
-{
-    // Move spider to center of scene
-    glm::vec3 sceneBoundsCenter = m_sceneBounds.GetCenter();
-    const BoundingBox& model_bbox = entity.GetBoundingBox();
-    glm::vec3 bboxCenter = model_bbox.GetCenter();
-    glm::vec3 modelMove = sceneBoundsCenter - bboxCenter;
-
-    // Adjust the y-axis of spider to move it above the scene
-    float yOffset = m_sceneBounds.GetMaxBounds().y - model_bbox.GetMinBounds().y;
-    modelMove.y = yOffset;
-
-    entity.SetPosition(modelMove);
-}
-void Scene::RenderObjects(Shader& shader, bool isRender_BBoxes)
-{
-    shader.activate();
-    for (Entity* cube : m_cubes) 
-    {
-        cube->Render(shader);
-    }
-
-	for (auto& item : AllObjects())
+	m_sceneBounds.Reset();
+	for (const BoxModel* cube : m_grounds)
 	{
-		item->Render(shader);
+		const BoundingBox& cubeBounds = cube->GetBoundingBox();
+		m_sceneBounds.ExpandToInclude(cubeBounds);
 	}
+}
 
-    // Render bounding boxes
-    if (isRender_BBoxes)
-    {
-        for (auto& item : AllObjects())
-        {
-            BoundingBox bbox_item = item->GetBoundingBox();
-            bbox_item.Render(shader);
-        }
-    }
-    
+void Scene::Render()
+{
+
 }
 void Scene::RenderPhysicsObjects(Shader& shader, bool isRender_BBoxes)
 {
     shader.activate();
 
-    for (Entity* cube : m_cubes)
-    {
-        cube->Render(shader);
-    }
+	for (BoxModel* cube : m_grounds)
+	{
+		cube->Render(shader);
+	}
+
+
 	for (auto& item : AllPhysicsObjects())
 	{
-		Ball* ball_item = dynamic_cast<Ball*>(item);
+		SphereModel* ball_item = dynamic_cast<SphereModel*>(item);
 		if (ball_item)
 		{
 			ball_item->Render(shader);
@@ -218,172 +221,41 @@ void Scene::RenderPhysicsObjects(Shader& shader, bool isRender_BBoxes)
     // Render bounding boxes
     if (isRender_BBoxes)
     {
+		m_sceneBounds.Render(shader);
+
         for (auto& item : AllPhysicsObjects())
         {
-            Ball* ball = dynamic_cast<Ball*>(item);
+			SphereModel* ball = dynamic_cast<SphereModel*>(item);
             BoundingBox bbox_item = ball->GetBoundingBox();
             bbox_item.Render(shader);
         }
     }
 }
-void Scene::RenderEnvironment(Shader& shader_environment)
+void Scene::RenderSkyBox(Shader& shader_environment)
 {
     shader_environment.activate();
-    m_environment->Render(shader_environment);
+	m_skyBox->Render(shader_environment);
 }
-Mesh* Scene::InitializeEnvironment()
+void Scene::RenderTerrain(Shader& shader_terrain)
 {
-    // cube vertices for vertex buffer object
-    std::vector<Vertex> vertices;
-    /*7------ 6
-     /|      /|
-    / |     / |
-    3------ 2 |
-    | |     | |
-    | 4---- |--5
-    | /     | /
-    |/      |/
-    0------ 1   */
-    glm::vec3 vertexPositions[8] =
-    {
-      glm::vec3(-1.0,  1.0,  1.0),
-      glm::vec3(-1.0, -1.0,  1.0),
-      glm::vec3(1.0, -1.0,  1.0),
-      glm::vec3(1.0,  1.0,  1.0),
-      glm::vec3(-1.0,  1.0, -1.0),
-      glm::vec3(-1.0, -1.0, -1.0),
-      glm::vec3(1.0, -1.0, -1.0),
-      glm::vec3(1.0,  1.0, -1.0),
-    };
-
-    for (auto& v : vertexPositions)
-    {
-        Vertex vertex;
-        vertex.Position = v;
-        // Set other vertex attributes if needed
-        vertices.push_back(vertex);
-    }
-    // Flip the vertex data
-    for (auto& vertex : vertices) {
-        vertex.Position = glm::vec3(vertex.Position.x, -vertex.Position.y, vertex.Position.z);
-    }
-    // cube indices for index buffer object
-    std::vector<unsigned int> indices_orig =
-    {
-      0, 1, 2, 3, // front 
-      3, 2, 6, 7, //top
-      7, 6, 5, 4, //back
-      4, 5, 1, 0,//bottom
-      0, 3, 7, 4,//left
-      1, 2, 6, 5,//right
-    };
-    std::vector<unsigned int> indices =
-    {
-        // Front
-        0, 1, 2,
-        0, 2, 3,
-        // Back
-        4, 5, 6,
-        4, 6, 7,
-        // Left 
-        0, 4, 3,
-        3, 4, 7,
-        // Right
-        1, 5, 2,
-        2, 5, 6,
-        // Top 
-        3, 2, 7,
-        2, 6, 7,
-        // Bottom
-        0, 1, 4,
-        1, 5, 4
-    };
-    // set up the cube map texture
-    string directory("source/resources/environment/skybox1/");
-    const std::string right("right.png");
-    const std::string left("left.png");
-    const std::string top("top.png");
-    const std::string bottom("bottom.png");
-    const std::string front("front.png");
-    const std::string back("back.png");
-
-    std::vector<std::string> textures_faces;
-    textures_faces.push_back(directory + right);
-    textures_faces.push_back(directory + left);
-    textures_faces.push_back(directory + top);
-    textures_faces.push_back(directory + bottom);
-    textures_faces.push_back(directory + back);
-    textures_faces.push_back(directory + front);
-    std::vector<Texture> textures_loaded = LoadCubeMapTextures(textures_faces);
-
-    return new Mesh(vertices, indices, textures_loaded);
-}
-
-
-std::vector<Texture> LoadCubeMapTextures(std::vector<std::string> textures_faces)
-{
-    std::vector<Texture> textures_loaded;
-    unsigned int textureID;
-    glGenTextures(1, &textureID);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
-    // Load the cubemap texture
-    for (int i = 0; i < 6; i++)
-    {
-        int width, height, nrChannels;
-        unsigned char* data = stbi_load(textures_faces[i].c_str(), &width, &height, &nrChannels, 0);
-        if (data)
-        {
-            GLenum format;
-            if (nrChannels == 1)
-                format = GL_RED;
-            else if (nrChannels == 3)
-                format = GL_RGB;
-            else if (nrChannels == 4)
-                format = GL_RGBA;
-
-            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
-                0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data
-            );
-            if (glGetError())
-            {
-                std::cout << "Texture images loaded failed" << std::endl;
-            }
-
-            stbi_image_free(data);
-        }
-        else
-        {
-            std::cout << "STBI failed to load cubemap texture: " << textures_faces[i] << std::endl;
-            stbi_image_free(data);
-        }
-    }
-    textures_loaded.push_back(Texture(textureID, "cubemap", textures_faces[0]));
-    // Set texture parameters
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-    return textures_loaded;
+	shader_terrain.activate();
+	m_terrain->Render(shader_terrain);
 }
 /*********************************************************************************************************
 *                     COLLISIONS
-**********************************************************************************************************/
-/*********************************************************************************************************
-* Plane to Object collsions
 **********************************************************************************************************/
 
 void Scene::checkCollisions()
 {
 	int nbrObjects = numberOfObjects();
 
-	// check for collisions with this object
-	for (int outer = 0; outer < nbrObjects - 1; outer++)
+	// check for collisions between objects
+	for (int idx1 = 0; idx1 < nbrObjects - 1; idx1++)
 	{
-		for (int inner = outer + 1; inner < nbrObjects; inner++)
+		for (int idx2 = idx1 + 1; idx2 < nbrObjects; idx2++)
 		{
-			PhysicsObject* objA = m_allPhysicsObjects[outer];
-			PhysicsObject* objB = m_allPhysicsObjects[inner];
+			PhysicsObject* objA = m_allPhysicsObjects[idx1];
+			PhysicsObject* objB = m_allPhysicsObjects[idx2];
 			int shapeIdA = objA->getShapeID();
 			int shapeIdB = objB->getShapeID();
 			// skip checking collisions for joints
@@ -400,7 +272,37 @@ void Scene::checkCollisions()
 			}
 		}
 	}
+
+	int nbrGrounds = m_grounds.size();
+	for (int objIdx = 0; objIdx < nbrObjects ; objIdx++)
+	{
+		PhysicsObject* physObj = m_allPhysicsObjects[objIdx];
+
+		for (int groundIndex = 0; groundIndex < nbrGrounds; groundIndex++) {
+			BoxModel* ground = m_grounds[groundIndex];
+
+			// Check for collision between physics object and ground
+			int shapeIdA = physObj->getShapeID();
+			int shapeIdB = ground->getShapeID();
+			// skip checking collisions for joints
+			if (shapeIdA < 0 || shapeIdB < 0)
+			{
+				continue;
+			}
+			// function pointers
+			int functionID = (shapeIdA * SHAPE_COUNT) + shapeIdB;
+			fn collisionFuncPtr = collisionFuncs[functionID];
+			if (collisionFuncPtr != nullptr)
+			{
+				collisionFuncPtr(physObj, ground);
+			}
+		}
+	}
 }
+/*********************************************************************************************************
+* Plane to Object collsions
+**********************************************************************************************************/
+
 bool Scene::planeToPlane(PhysicsObject* a_planeA, PhysicsObject* a_planeB)
 {
 	Plane* planeA = dynamic_cast<Plane*>(a_planeA);
@@ -430,8 +332,8 @@ bool Scene::planeToBox(PhysicsObject* plane, PhysicsObject* box)
 **********************************************************************************************************/
 bool Scene::sphereToSphere(PhysicsObject* a_sphereA, PhysicsObject* a_sphereB)
 {
-	Ball* sphereA = dynamic_cast<Ball*>(a_sphereA);
-	Ball* sphereB = dynamic_cast<Ball*>(a_sphereB);
+	SphereModel* sphereA = dynamic_cast<SphereModel*>(a_sphereA);
+	SphereModel* sphereB = dynamic_cast<SphereModel*>(a_sphereB);
 
 	if (sphereA != nullptr && sphereB != nullptr)
 	{
@@ -504,64 +406,12 @@ bool Scene::sphereToSphere(PhysicsObject* a_sphereA, PhysicsObject* a_sphereB)
 			else
 			{
 				// object colliding yes, stop objects
-				/*sphereA->SetVelocity(glm::vec3(0.0f));
+				sphereA->SetVelocity(glm::vec3(0.0f));
 				sphereB->SetVelocity(glm::vec3(0.0f));
 				if (onGroundA || onGroundB)
 				{
 					sphereA->Rigidbody()->m_data.onGround = true;
 					sphereB->Rigidbody()->m_data.onGround = true;
-				}*/
-
-				// get the normal of the gap between objects
-				glm::vec3 collisionNormal = glm::normalize(sphereB->GetPosition() - sphereA->GetPosition());
-				// if both spheres are not on the ground
-				if (!onGroundA && !onGroundB) {
-					// calculate force vector
-					glm::vec3 relativeVelocity = sphereA->GetVelocity() - sphereB->GetVelocity();
-					glm::vec3 collisionVector = collisionNormal * (glm::dot(relativeVelocity, collisionNormal));
-					glm::vec3 forceVector = collisionVector * 1.0f / (1.0f / sphereA->Rigidbody()->m_data.mass + 1.0f / sphereB->Rigidbody()->m_data.mass);
-
-					// combine elasticity
-					float combinedElasticity = (sphereA->Rigidbody()->m_data.elasticity +
-						sphereB->Rigidbody()->m_data.elasticity / 2.0f);
-					// use Newton's third law to apply collision forces to colliding bodies 
-					sphereA->Rigidbody()->applyForceToAnotherBody(sphereB->Rigidbody(), forceVector + (forceVector * combinedElasticity));
-
-					// apply torque
-					glm::vec3 centerPoint = sphereA->GetPosition() - sphereB->GetPosition();
-					glm::vec3 torqueLever = glm::normalize(glm::vec3(centerPoint.y, -centerPoint.x, 0.0f));
-
-					float torque = glm::dot(torqueLever, relativeVelocity) * 1.0f / (1.0f / sphereA->Rigidbody()->m_data.mass + 1.0f / sphereB->Rigidbody()->m_data.mass);
-
-					sphereA->Rigidbody()->applyTorque(glm::vec3(0.0f, 0.0f, -torque));
-					sphereB->Rigidbody()->applyTorque(glm::vec3(0.0f, 0.0f, torque));
-
-					// move out spheres out of collision 
-					glm::vec3 separationVector = collisionNormal * distance * 0.5f;
-					sphereA->SetPosition(sphereA->GetPosition() - separationVector);
-					sphereB->SetPosition(sphereB->GetPosition() + separationVector);
-				}
-				// if one sphere is on the ground treat collsion as plane collision
-				if (onGroundA || onGroundB)
-				{
-					// determine moving sphere
-					Sphere* sphere = (onGroundA ? sphereB : sphereA);
-					Sphere* sphereGround = (onGroundA ? sphereA : sphereB);
-					// calculate force vector
-					glm::vec3 forceVector = -1 * sphere->Rigidbody()->m_data.mass * collisionNormal * (glm::dot(collisionNormal, sphere->GetVelocity()));
-					// apply force
-					sphere->Rigidbody()->applyForce(forceVector * 2.0f);
-					// apply torque
-					glm::vec3 torqueLever = glm::normalize(glm::vec3(collisionNormal.y, -collisionNormal.x, 0.0f));
-
-					float torque = glm::dot(torqueLever, sphere->GetVelocity()) * -1.0f / (1.0f / sphereA->Rigidbody()->m_data.mass);
-					sphere->Rigidbody()->applyTorque(glm::vec3(0.0f, 0.0f, torque));
-
-					// move out of collision
-					glm::vec3 separationVector = collisionNormal * distance * 0.5f;
-					sphere->SetPosition(sphere->GetPosition() - separationVector);
-					// stop other sphere from being on ground
-					sphereGround->Rigidbody()->m_data.onGround = false;
 				}
 			}
 			return true;
@@ -660,7 +510,8 @@ bool Scene::boxToSphere(PhysicsObject* a_box, PhysicsObject* a_sphere)
 				glm::vec3 collisionNormal = glm::normalize(centerDist);
 				glm::vec3 overlap = abs(centerDist - boxesMaxSize);
 				// if both boxs are not on the ground
-				if (!onGroundA && !onGroundB) {
+				if (!onGroundA && !onGroundB) 
+				{
 					// calculate force vector
 					glm::vec3 relativeVelocity = box->GetVelocity() - sphere->GetVelocity();
 					glm::vec3 collisionVector = collisionNormal * (glm::dot(relativeVelocity, collisionNormal));
@@ -670,7 +521,6 @@ bool Scene::boxToSphere(PhysicsObject* a_box, PhysicsObject* a_sphere)
 						sphere->Rigidbody()->m_data.elasticity / 2.0f);
 					// use Newton's third law to apply collision forces to colliding bodies 
 					box->Rigidbody()->applyForceToAnotherBody(sphere->Rigidbody(), forceVector + (forceVector * combinedElasticity));
-
 					// apply torque
 					float torque = glm::dot(collisionVector, relativeVelocity) * 1.0f / (1.0f / box->Rigidbody()->m_data.mass + 1.0f / sphere->Rigidbody()->m_data.mass);
 

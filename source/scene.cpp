@@ -18,14 +18,27 @@ static fn collisionFuncs[] =
 	Scene::boxToPlane, Scene::boxToSphere, Scene::boxToBox
 };
 
+Scene::Scene(Sky typeSkye)
+{
+	m_typeSky = typeSkye;
+	loadScene();
+}
+
 Scene::~Scene()
 {
     for (auto& item : m_allPhysicsObjects)
     {
         delete item;
     }
+	if (m_skyBox)
+	{
+		delete m_skyBox;
+	}
+	if (m_skyDome)
+	{
+		delete m_skyDome;
+	}
 
-	delete m_skyBox;
 }
 
 void Scene::loadScene()
@@ -52,10 +65,17 @@ void Scene::loadScene()
 	//ball2->SetCurrentPosAsOriginalPos();
 	//ball3->SetCurrentPosAsOriginalPos();
 
-	m_skyBox = new Skybox();
+	if (m_typeSky == Sky::SkyBox)
+	{
+		m_skyBox = new Skybox();
+	}
+	else if (m_typeSky == Sky::SkyDome)
+	{
+		m_skyDome = new SkyDome();
+	}
 
 	m_terrain = new BaseTerrain();
-
+	
 }
 void  Scene::ResetScene()
 {
@@ -229,12 +249,20 @@ void Scene::RenderPhysicsObjects(Shader& shader, bool isRender_BBoxes)
             BoundingBox bbox_item = ball->GetBoundingBox();
             bbox_item.Render(shader);
         }
+
+		BoundingBox bbox_terrain = m_terrain->GetBoundingBox();
+		bbox_terrain.Render(shader);
     }
 }
-void Scene::RenderSkyBox(Shader& shader_environment)
+void Scene::RenderSkyBox(Shader& shader_skybox)
 {
-    shader_environment.activate();
-	m_skyBox->Render(shader_environment);
+	shader_skybox.activate();
+	m_skyBox->Render(shader_skybox);
+}
+void Scene::RenderSkyDome(Shader& shader_skydome)
+{
+	shader_skydome.activate();
+	m_skyDome->Render(shader_skydome);
 }
 void Scene::RenderTerrain(Shader& shader_terrain)
 {

@@ -39,9 +39,9 @@ Box::~Box()
 	delete m_rigidbody;
 }
 
-void Box::updatePhysics(glm::vec3 gravity, float timeStep)
+void Box::UpdatePhysics(glm::vec3 gravity, float timeStep)
 {
-	m_rigidbody->updatePhysics(gravity, timeStep);
+	m_rigidbody->UpdatePhysics(gravity, timeStep);
 }
 
 bool Box::checkCollision(PhysicsObject * other)
@@ -163,7 +163,7 @@ void BoxModel::Render(Shader& shader)
 
 void BoxModel::UpdatePhysics(glm::vec3 gravity, float timeStep)
 {
-    m_rigidbody->updatePhysics(gravity, timeStep);
+    m_rigidbody->UpdatePhysics(gravity, timeStep);
     auto velocity = GetVelocity();
     UpdateBoundingBox(velocity * timeStep);
 }

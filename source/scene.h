@@ -3,7 +3,7 @@
 #include"PhysicsEngine/Box.h"
 #include"SkyBox.h"
 #include"Terrain.h"
-
+#include"SkyDome.h"
 
 const std::string cubePath = std::string("source/resources/cube/cube.gltf");
 const std::string spiderPath = std::string("source/resources/spider/spider.obj");
@@ -15,12 +15,16 @@ struct PhysicsProperties
     bool collisions = true;
     bool collisionResponse = true;
 };
-
+enum class Sky 
+{
+    SkyBox = 0,
+    SkyDome= 1
+};
 
 class Scene 
 {
 public:
-    Scene() {};
+    Scene(Sky typeSkye= Sky::SkyDome);
     ~Scene();
     void loadScene();
     void OnUpdate(float deltaTime);
@@ -45,11 +49,16 @@ public:
     void Render();
     void RenderPhysicsObjects(Shader & shader, bool isRender_BBoxes = false);
     void RenderSkyBox(Shader& shader_skyBox);
+    void RenderSkyDome(Shader& shader_skydome);
     void RenderTerrain(Shader& shader_terrain);
 
     void ResetScene();
     void ClearScene();
 
+
+    inline BaseTerrain* getTerrain() { return m_terrain; };
+    inline SkyDome* getSkyDome() { return m_skyDome; };
+    inline Skybox* getSkyBox() { return m_skyBox; };
 
     /**************     COLLISIONS  ****************/
     void checkCollisions();
@@ -71,12 +80,15 @@ public:
     PhysicsProperties m_properties;
 
 private:
+    Sky m_typeSky = Sky::SkyDome;
 
     std::vector<PhysicsObject*> m_allPhysicsObjects;
     std::vector<BoxModel*> m_grounds;
     BoundingBox m_sceneBounds;
 
     Skybox* m_skyBox=nullptr;
+
+    SkyDome* m_skyDome = nullptr;
 
     BaseTerrain* m_terrain = nullptr;
 

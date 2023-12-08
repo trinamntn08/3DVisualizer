@@ -3,8 +3,8 @@
 
 struct RigidBodyData 
 {
-	glm::vec3 position;
-	glm::vec3 velocity;
+	glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f);
+	glm::vec3 velocity = glm::vec3(0.0f, 0.0f, 0.0f);
 
 	glm::vec3 rotation = glm::vec3(0.0f, 0.0f, 0.00000001f);
 	glm::vec3 angularVelocity;
@@ -42,7 +42,7 @@ public:
 
 	~RigidBody();
 
-	void updatePhysics(glm::vec3 gravity, float timeStep);
+	void UpdatePhysics(glm::vec3 gravity, float timeStep);
 
 	// force application
 	void applyForce(glm::vec3 force);

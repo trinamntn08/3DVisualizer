@@ -22,8 +22,8 @@ enum Camera_Movement {
 // Default camera values
 const float YAW         = -90.0f;
 const float PITCH       =  0.0f;
-const float SPEED       =  40.0f;
-const float SENSITIVITY =  200.0f;
+const float TRANSLATION_SPEED =  500.0f;
+const float ROTATION_SPEED = 2.0f;
 const float ZOOM        =  45.0f;
 
 class Camera
@@ -46,7 +46,7 @@ public:
 	void ProcessMouseScroll(float yOffSet);
 
 	void LookAtBoundingBox(const BoundingBox& boundingBox);
-
+	void LookAt(const glm::vec3& target);
 	void SetPosition(glm::vec3&& pos);
 
 	int GetViewPortWidth() { return m_ViewportWidth; };

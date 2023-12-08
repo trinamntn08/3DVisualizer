@@ -13,6 +13,7 @@
 #include"pickingTexture.h" // Not used yet
 #include"mousePicker.h" // Not used yet
 #include"traceRay.h"
+#include<memory>
 
 struct AppSpecification
 {
@@ -59,10 +60,11 @@ private:
 	//Shaders
 	Shader m_shader_scene;
 	Shader m_shader_skyBox;
+	Shader m_shader_skyDome;
 	Shader m_shader_terrain;
 
 	Camera m_camera;
-	Scene m_scene;
+	std::unique_ptr<Scene> m_scene;
 
 	// Mouse
 	MouseHandler m_mouseHandler;

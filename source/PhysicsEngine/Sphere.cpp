@@ -22,7 +22,7 @@ Sphere::Sphere(glm::vec3 position, float angle, float speed, float mass, float r
 
 void Sphere::UpdatePhysics(glm::vec3 gravity, float timeStep)
 {
-	m_rigidbody->updatePhysics(gravity, timeStep);
+	m_rigidbody->UpdatePhysics(gravity, timeStep);
 }
 
 /////////////////////////////////////////////////////////////////
@@ -67,7 +67,7 @@ void SphereModel::Render(Shader& shader)
 
 void SphereModel::UpdatePhysics(glm::vec3 gravity, float timeStep)
 {
-    m_rigidbody->updatePhysics(gravity, timeStep);
+    m_rigidbody->UpdatePhysics(gravity, timeStep);
     auto velocity = GetVelocity();
     UpdateBoundingBox(velocity * timeStep);
 }

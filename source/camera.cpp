@@ -5,7 +5,7 @@ Camera::Camera(float verticalFOV, float nearClip, float farClip)
 	: m_VerticalFOV(verticalFOV), m_NearClip(nearClip), m_FarClip(farClip)
 {
 	m_ForwardDirection = glm::vec3(0, 0, -1);
-	m_Position = glm::vec3(0, 0, 10);
+	m_Position = glm::vec3(0, 0.0f, 10.0f);
 	RecalculateProjection();
 	RecalculateView();
 }
@@ -27,7 +27,7 @@ bool Camera::OnUpdate(GLFWwindow* window,float deltaTime)
 	constexpr glm::vec3 upDirection(0.0f, 1.0f, 0.0f);
 	glm::vec3 rightDirection = glm::cross(m_ForwardDirection, upDirection);
 
-	float velocity = SPEED * deltaTime;
+	float velocity = TRANSLATION_SPEED * deltaTime;
 	//Mouse
 	if(glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS)
 	{
@@ -107,13 +107,12 @@ bool Camera::OnUpdate(GLFWwindow* window,float deltaTime)
 		m_Position += upDirection * velocity;
 		moved = true;
 	}
-	else if (glfwGetKey(window, GLFW_KEY_Z) == GLFW_PRESS)
+	else if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
 	{
-		Log::info("Presse Z !!!");
+		Log::info("Presse Space !!!");
 		isWireFrame = !isWireFrame;
 		if (isWireFrame)
 		{
-			// draw in wireframe
 			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 		}
 		else
@@ -137,7 +136,7 @@ bool Camera::OnUpdate(GLFWwindow* window,float deltaTime)
 
 float Camera::GetRotationSpeed()
 {
-	return 0.3f;
+	return ROTATION_SPEED;
 }
 
 void Camera::RecalculateProjection()
@@ -173,6 +172,13 @@ void Camera::LookAtBoundingBox(const BoundingBox& boundingBox)
 	m_Position = boundingBoxCenter + glm::vec3(0.0f, 0.0f, 2.0f * boundingBoxRadius);
 	m_ForwardDirection = glm::normalize(boundingBoxCenter - m_Position);
 
+	RecalculateView();
+}
+
+void Camera::LookAt(const glm::vec3& target)
+{
+	// Calculate the new forward direction
+	m_ForwardDirection = glm::normalize(target - m_Position);
 	RecalculateView();
 }
 

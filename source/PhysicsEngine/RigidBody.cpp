@@ -30,7 +30,7 @@ RigidBody::~RigidBody()
 {
 }
 
-void RigidBody::updatePhysics(glm::vec3 gravity, float timeStep)
+void RigidBody::UpdatePhysics(glm::vec3 gravity, float timeStep)
 {
 	if (m_data.isStatic) 
 	{

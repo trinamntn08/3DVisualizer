@@ -14,7 +14,7 @@ public:
 	void Copy(const Box& other);
 	virtual ~Box();
 
-	virtual void updatePhysics(glm::vec3 gravity, float timeStep);
+	virtual void UpdatePhysics(glm::vec3 gravity, float timeStep);
 
 	glm::vec3 GetSize() { return m_size; }
 	glm::vec4 getColor() { return m_color; }
@@ -35,7 +35,7 @@ public:
 
 	BoxModel(const std::string& pathToModel, const glm::vec3& position = glm::vec3(0.0f),
 		glm::vec3 velocity = glm::vec3(1.0f, 0.0f, 0.0f),
-		float mass = 100000.f, glm::vec3 size=glm::vec3(0.0f), const glm::vec3& scale = glm::vec3(1.0f));
+		float mass = 100.f, glm::vec3 size=glm::vec3(0.0f), const glm::vec3& scale = glm::vec3(1.0f));
 	
 	BoxModel(BoxModel& other);
 

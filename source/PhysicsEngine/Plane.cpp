@@ -25,7 +25,7 @@ Plane::~Plane()
 {
 }
 
-void Plane::updatePhysics(glm::vec3 gravity, float timeStep)
+void Plane::UpdatePhysics(glm::vec3 gravity, float timeStep)
 {
 }
 

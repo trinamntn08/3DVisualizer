@@ -43,10 +43,14 @@ public:
     unsigned int VAO;
     Mesh();
     Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<Texture> textures);
+    
+    // For Skydome
+    Mesh(std::vector<Vertex> vertices, std::vector<Texture> textures);
+
     ~Mesh();
 
     void Render(Shader& shader);
-
+    void RenderSkyDome(Shader& shader);
 
 
 private:
@@ -55,5 +59,6 @@ private:
 
     // initializes all the buffer objects/arrays
     void setupMesh();
+    void setupMeshWithoutIndices();
 };
 #endif

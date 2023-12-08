@@ -12,7 +12,7 @@ Application* CreateApplication()
 }
 
 Application::Application(const AppSpecification& appSpec):
-    m_spec(appSpec),m_camera(Camera(45.0f, 0.1f, 1000.0f))
+    m_spec(appSpec),m_camera(Camera(45.0f, 0.1f, 5000.0f))
 {
     Init();
     InitShader();
@@ -97,14 +97,16 @@ void Application::InitShader()
     m_shader_scene = Shader("source/shaders/core_vertex.glsl", "source/shaders/core_fragment.glsl");
     m_shader_skyBox = Shader("source/shaders/skybox_vertex.glsl", "source/shaders/skybox_fragment.glsl");
     m_shader_terrain = Shader("source/shaders/terrain_vertex.glsl", "source/shaders/terrain_fragment.glsl");
+    m_shader_skyDome = Shader("source/shaders/skydome_vertex.glsl", "source/shaders/skydome_fragment.glsl");
+
 }
 
 void Application::Run()
 {
     m_running = true;
-    m_scene.loadScene();
+    m_scene =std::make_unique<Scene>(Sky::SkyDome);
  //   m_camera.LookAtBoundingBox(m_scene.getSceneBounds());
-    
+    m_camera.LookAt(glm::vec3(0.0f, 0.0f, -1.0f));
     // render loop
     while (!glfwWindowShouldClose(m_window))
     {
@@ -117,13 +119,13 @@ void Application::Run()
         // Reset scene
         if (glfwGetKey(m_window, GLFW_KEY_SPACE) == GLFW_PRESS)
         {
-            m_scene.ResetScene();
+            m_scene->ResetScene();
         }
 
         MoveObjects();
 
         m_camera.OnUpdate(m_window, m_frameTime);
-        m_scene.OnUpdate(m_frameTime);
+        m_scene->OnUpdate(m_frameTime);
        
         // render
         glClearColor(0.08f, 0.16f, 0.18f, 1.0f);
@@ -140,30 +142,44 @@ void Application::Run()
         glm::mat4 projection = m_camera.GetProjectionMatrix();
         m_shader_scene.setMat_MVP(model, view, projection);
 
-        m_scene.RenderPhysicsObjects(m_shader_scene, false);
+        m_scene->RenderPhysicsObjects(m_shader_scene, false);
 
         // Render skyBox
+        //glDepthFunc(GL_LEQUAL);
+        //m_shader_skyBox.activate();
+
+        //glm::mat4 model_skyBox = glm::mat4(1.0f);
+        //glm::mat4 view_skyBox = m_camera.GetViewMatrix();
+        //glm::mat4 projection_skyBox = m_camera.GetProjectionMatrix();
+        //m_shader_skyBox.setMat_MVP(model_skyBox, view_skyBox, projection_skyBox);
+
+        //m_scene.RenderSkyBox(m_shader_skyBox);
+        //glDepthFunc(GL_LESS);
+
+
+        // Render skyDome
         glDepthFunc(GL_LEQUAL);
-        m_shader_skyBox.activate();
+        m_shader_skyDome.activate();
 
-        glm::mat4 model_skyBox = glm::mat4(1.0f);
-        glm::mat4 view_skyBox = m_camera.GetViewMatrix();
-        glm::mat4 projection_skyBox = m_camera.GetProjectionMatrix();
-        m_shader_skyBox.setMat_MVP(model_skyBox, view_skyBox, projection_skyBox);
+        glm::mat4 model_skyDome = glm::mat4(1.0f);
+        glm::mat4 view_skyDome = m_camera.GetViewMatrix();
+        glm::mat4 projection_skyDome = m_camera.GetProjectionMatrix();
+        m_shader_skyDome.setMat_MVP(model_skyDome, view_skyDome, projection_skyDome);
 
-        m_scene.RenderSkyBox(m_shader_skyBox);
+        m_scene->RenderSkyDome(m_shader_skyDome);
         glDepthFunc(GL_LESS);
 
         // Render terrain
-
         m_shader_terrain.activate();
 
         glm::mat4 model_terrain = glm::mat4(1.0f);
+        // Apply the scaling transformation
+        model_terrain = glm::scale(model_terrain, m_scene->getTerrain()->GetScale());
         glm::mat4 view_terrain = m_camera.GetViewMatrix();
         glm::mat4 projection_terrain = m_camera.GetProjectionMatrix();
         m_shader_terrain.setMat_MVP(model_terrain, view_terrain, projection_terrain);
 
-        m_scene.RenderTerrain(m_shader_terrain);
+        m_scene->RenderTerrain(m_shader_terrain);
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
@@ -212,7 +228,7 @@ void Application::MoveObjects()
         glfwGetCursorPos(m_window, &mouseX, &mouseY);
         glm::vec2 mousePosition((float)mouseX, (float)mouseY);
   
-        for (PhysicsObject* physicsItem : m_scene.AllPhysicsObjects())
+        for (PhysicsObject* physicsItem : m_scene->AllPhysicsObjects())
         {
             if (BoxModel* item_box = dynamic_cast<BoxModel*>(physicsItem))
             {
@@ -220,7 +236,7 @@ void Application::MoveObjects()
                 bool hit = RayIntersectsBoundingBox(mousePosition, item_box->GetBoundingBox(), intersectPoint);
 
                 glm::vec3 clickedPtsOnScene;
-                bool hitScene = RayIntersectsBoundingBox(mousePosition, m_scene.getSceneBounds(), clickedPtsOnScene);
+                bool hitScene = RayIntersectsBoundingBox(mousePosition, m_scene->getSceneBounds(), clickedPtsOnScene);
 
                 if ((hit && hitScene) || isObjectGrabbed)
                 {
@@ -257,7 +273,7 @@ void Application::MoveObjects()
                             clickedPtsOnScene.z - grabOffset.z);
 
                         // Ensure the object stays above the scene
-                        float minY = m_scene.getSceneBounds().GetMaxBounds().y + bbox_item.GetDimensions().y / 2.0f;
+                        float minY = m_scene->getSceneBounds().GetMaxBounds().y + bbox_item.GetDimensions().y / 2.0f;
                         newTarget.y = std::max(newTarget.y, minY);
                         // Smoothly move the object
                         static float moveSpeed = 0.05f;

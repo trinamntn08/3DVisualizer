@@ -1,12 +1,28 @@
 #include "Terrain.h"
 #include"stb_image.h"
 #include"Logger.h"
+#include"PhysicsEngine/RigidBody.h"
 
-void BaseTerrain::Init(float WorldScale)
-{
-    m_worldScale = WorldScale;
-	initTerrain();
+BaseTerrain::BaseTerrain(glm::vec3 scale):m_scale(scale)
+{ 
+	m_rigidbody = new RigidBody();
+	InitTerrain(); 
+	ComputeBoundingBox();
 }
+
+BaseTerrain::~BaseTerrain()
+{
+	if (m_terrain)
+	{
+		delete m_terrain;
+	}
+}
+
+void BaseTerrain::UpdatePhysics(glm::vec3 gravity, float timeStep)
+{
+	m_rigidbody->UpdatePhysics(gravity, timeStep);
+}
+
 
 void BaseTerrain::Render(Shader& shader)
 {
@@ -36,7 +52,7 @@ void BaseTerrain::LoadHeightMapFile(const char* filePath)
     //m_heightMap.InitArray2D(m_terrainSize, m_terrainSize, (float*)p);
 }
 
-void BaseTerrain::initTerrain()
+void BaseTerrain::InitTerrain()
 {
 	// Initialize vertices
 	 std::vector<Vertex> vertices = InitVerticesWithHeightMapFromFile(heightMapFile.c_str(), m_width, m_depth);
@@ -77,7 +93,7 @@ void BaseTerrain::initTerrain()
 		}
 	}
 
-	// set up the terrain textures
+	// textures
 	std::vector<Texture> textures_terrain;
 
 	//Texture sand = LoadTerrainTextures("sand", path_terrain_texture + "sand.jpg");
@@ -87,7 +103,7 @@ void BaseTerrain::initTerrain()
 	//Texture rnormal = LoadTerrainTextures("rnormal", path_terrain_texture + "rnormal.jpg");
 	//Texture terrainTexture = LoadTerrainTextures("terrainTexture", path_terrain_texture + "terrainTexture.jpg");
 //	Texture SamplerTerrain = LoadTerrainTextures("SamplerTerrain", path_terrain_texture + "terrain_surface.png");
-	Texture SamplerTerrain = LoadTerrainTextures("SamplerTerrain", path_terrain_texture + "terrainTexture.jpg");
+	Texture SamplerTerrain = LoadTerrainTextures("SamplerTerrain", path_terrain_texture + "terrain_surface.png");
 	//	Texture SamplerTerrain;
 
 	//textures_terrain.push_back(sand);
@@ -229,6 +245,50 @@ std::vector<Vertex> BaseTerrain::InitVerticesWithHeightMapFromFile(const char* i
 	}
 	stbi_image_free(data);
 	return vertices;
+}
+
+void BaseTerrain::SetPosition(const glm::vec3& newPosition)
+{
+	glm::vec3 pos = GetPosition();
+	glm::vec3 deltaPos = newPosition - pos;
+	PhysicsObject::SetPosition(newPosition);
+	UpdateBoundingBox(deltaPos);
+}
+
+void BaseTerrain::ComputeBoundingBox()
+{
+	if (!m_terrain)
+	{
+		return;
+	}
+	m_bbox.Reset();
+	// Initialize temporary bounds with the position of the first vertex
+	glm::vec3 pos = GetPosition();
+	glm::vec3 minBound_temp = m_terrain->vertices[0].Position + pos;
+	glm::vec3 maxBound_temp = minBound_temp;
+
+	// Iterate over each vertex within the mesh
+	for (const Vertex& vertex : m_terrain->vertices)
+	{
+		// Apply the model's position to the vertex
+		glm::vec3 vertexPosition = vertex.Position + pos;
+
+		// Update the temporary bounds more efficiently
+		minBound_temp = glm::min(minBound_temp, vertexPosition);
+		maxBound_temp = glm::max(maxBound_temp, vertexPosition);
+	}
+
+	// Update the model's bounding box with scale
+	minBound_temp *= m_scale;
+	maxBound_temp *= m_scale;
+
+	m_bbox.setMinBound(minBound_temp);
+	m_bbox.setMaxBound(maxBound_temp);
+}
+
+void BaseTerrain::UpdateBoundingBox(glm::vec3 deltaPos)
+{
+	m_bbox.Move(deltaPos);
 }
 
 

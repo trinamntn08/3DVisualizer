@@ -9,7 +9,7 @@ public:
 	Plane(glm::vec3 normal, float distance, bool twoD = false);
 	virtual ~Plane();
 
-	virtual void updatePhysics(glm::vec3 gravity, float timeStep);
+	virtual void UpdatePhysics(glm::vec3 gravity, float timeStep);
 
 	virtual glm::vec3 GetPosition() override { return m_position; };
 	//virtual  void setPosition(glm::vec3 a_position) override;

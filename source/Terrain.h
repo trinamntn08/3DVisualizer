@@ -27,9 +27,12 @@ public:
 	inline glm::vec3 GetScale() const { return m_scale; }
 
 	void InitTerrain();
+	void UpdateParamsForShaders();
 	Texture LoadTerrainTextures(std::string name_texture, std::string pathFile_texture);
 	float GetHeightForPos(unsigned int x,unsigned int z, std::vector<std::vector<float>> heightMap);
 	std::vector<Vertex> InitVerticesWithHeightMapFromFile(const char* imagePath, unsigned int& width, unsigned int& height);
+
+	void CalculateNormals(std::vector<Vertex>& Vertices, std::vector<unsigned int>& Indices);
 
 	void SetPosition(const glm::vec3& newPosition);
 

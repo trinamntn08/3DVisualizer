@@ -74,7 +74,7 @@ Vertex SkyDome::CreateVertex(const glm::vec3& position)
     Vertex vertex;
     glm::vec3 normalizedPos = glm::normalize(position);
     float u = 0.5f + atan2(normalizedPos.z, normalizedPos.x) / (2.0f * M_PI);
-    float v = 0.5f - asin(normalizedPos.y) / M_PI;
+    float v = 0.5f - asin(normalizedPos.y) / (2.0f * M_PI);
 
     vertex.Position = position;
     vertex.Normal = normalizedPos;

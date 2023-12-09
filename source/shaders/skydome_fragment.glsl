@@ -18,7 +18,7 @@ void main()
 
       vec4 SkyColor = mix(gLowColor, gHighColor, Height);
 
-//      FragColor = TexColor * 0.7 + SkyColor * 0.3;
-      FragColor = SkyColor;
+      FragColor = TexColor * 0.7 + SkyColor * 0.3;
+  //      FragColor = SkyColor; // Test Height is computed correctly 
  //        FragColor = vec4(TexCoords, 0.0, 1.0);
 }

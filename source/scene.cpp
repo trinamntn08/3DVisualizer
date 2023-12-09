@@ -44,27 +44,29 @@ Scene::~Scene()
 void Scene::loadScene()
 {
 	Timer("loadScene");
- //   InitializeCubes(cubePath);
- //   CalculateSceneBounds();
+	/*
+    InitializeCubes(cubePath);
+    CalculateSceneBounds();
 
-	//SphereModel* ball1 = new SphereModel(ballPath, glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, 0.0f));
-	//SphereModel* ball2 = new SphereModel(ballPath, glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, 0.0f));
-	//SphereModel* ball3 = new SphereModel(ballPath, glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, 0.0f));
- //   
- //   m_allPhysicsObjects.push_back(ball1);
- //   m_allPhysicsObjects.push_back(ball2);
-	//m_allPhysicsObjects.push_back(ball3);
+	SphereModel* ball1 = new SphereModel(ballPath, glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+	SphereModel* ball2 = new SphereModel(ballPath, glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+	SphereModel* ball3 = new SphereModel(ballPath, glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+    
+    m_allPhysicsObjects.push_back(ball1);
+    m_allPhysicsObjects.push_back(ball2);
+	m_allPhysicsObjects.push_back(ball3);
 
-	//UpdateAllObjectsToFitScene();
+	UpdateAllObjectsToFitScene();
 
-	//ball1->Translation(glm::vec3(3.0f, 5.0f, 3.0f));
-	//ball2->Translation(glm::vec3(-3.0f, 7.0f, 3.0f));
-	//ball3->Translation(glm::vec3(0.0f, 4.0f, 3.0f));
+	ball1->Translation(glm::vec3(3.0f, 5.0f, 3.0f));
+	ball2->Translation(glm::vec3(-3.0f, 7.0f, 3.0f));
+	ball3->Translation(glm::vec3(0.0f, 4.0f, 3.0f));
 
- //   ball1->SetCurrentPosAsOriginalPos();
-	//ball2->SetCurrentPosAsOriginalPos();
-	//ball3->SetCurrentPosAsOriginalPos();
-
+	ball1->SetCurrentPosAsOriginalPos();
+	ball2->SetCurrentPosAsOriginalPos();
+	ball3->SetCurrentPosAsOriginalPos();
+	*/
+	
 	if (m_typeSky == Sky::SkyBox)
 	{
 		m_skyBox = new Skybox();

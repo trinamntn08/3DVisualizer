@@ -87,7 +87,6 @@ private:
     BoundingBox m_sceneBounds;
 
     Skybox* m_skyBox=nullptr;
-
     SkyDome* m_skyDome = nullptr;
 
     BaseTerrain* m_terrain = nullptr;

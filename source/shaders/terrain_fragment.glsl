@@ -1,63 +1,76 @@
-#version 330 core
+#version 330
+
+layout(location = 0) out vec4 FragColor;
 
 in vec4 Color;
 in vec2 TexCoords;
+in vec3 WorldPos;
+in vec3 Normal;
 
-out vec4 FragColor;
+uniform sampler2D gTextureHeight0;
+uniform sampler2D gTextureHeight1;
+uniform sampler2D gTextureHeight2;
+uniform sampler2D gTextureHeight3;
 
-uniform sampler2D sand, grass1, grass, rock, snow, rockNormal;
-uniform sampler2D SamplerTerrain;
+uniform float gHeight0 = 80.0;
+uniform float gHeight1 = 210.0;
+uniform float gHeight2 = 250.0;
+uniform float gHeight3 = 280.0;
 
+uniform vec3 gReversedLightDir;
+
+vec4 CalcTexColor()
+{
+    vec4 TexColor;
+
+    float Height = WorldPos.y;
+
+    if (Height < gHeight0) 
+    {
+       TexColor = texture(gTextureHeight0, TexCoords);
+    } 
+    else if (Height < gHeight1) 
+    {
+       vec4 Color0 = texture(gTextureHeight0, TexCoords);
+       vec4 Color1 = texture(gTextureHeight1, TexCoords);
+       float Delta = gHeight1 - gHeight0;
+       float Factor = (Height - gHeight0) / Delta;
+       TexColor = mix(Color0, Color1, Factor);
+    } 
+    else if (Height < gHeight2) 
+    {
+       vec4 Color0 = texture(gTextureHeight1, TexCoords);
+       vec4 Color1 = texture(gTextureHeight2, TexCoords);
+       float Delta = gHeight2 - gHeight1;
+       float Factor = (Height - gHeight1) / Delta;
+       TexColor = mix(Color0, Color1, Factor);
+    } 
+    else if (Height < gHeight3) 
+    {
+       vec4 Color0 = texture(gTextureHeight2, TexCoords);
+       vec4 Color1 = texture(gTextureHeight3, TexCoords);
+       float Delta = gHeight3 - gHeight2;
+       float Factor = (Height - gHeight2) / Delta;
+       TexColor = mix(Color0, Color1, Factor);
+    } else 
+    {
+       TexColor = texture(gTextureHeight3, TexCoords);
+    }
+    TexColor = texture(gTextureHeight3, TexCoords);
+    return TexColor;
+}
 
 
 void main()
 {
-   vec3 texel = vec3(texture(SamplerTerrain, TexCoords));
-   FragColor = vec4(texel, 1.0);
+    vec4 TexColor = CalcTexColor();
+
+    vec3 Normal_ = normalize(Normal);
+
+    float Diffuse = dot(Normal_, gReversedLightDir);
+
+    Diffuse = max(0.3f, Diffuse);
+
+    FragColor = Color * 6.0f* TexColor * Diffuse;
+
 }
-
-/*
-vec4 getTexture(inout vec3 normal, const mat3 TBN)
-{
-	float trans = 20.;
-
-	vec4 sand_t = vec4(244, 231, 127, 255)/255;//texture(sand, texCoord*5.0);
-	vec4 rock_t = vec4(rockColor,1.0);//texture(rock, texCoord*15.0);
-	vec4 grass_t = vec4(92, 196, 66, 255)/255;//texture(grass, texCoord*5.0);
-
-	sand_t = texture(sand, texCoord*10.0);
-	sand_t.rg *= 1.3;
-	rock_t = texture(rock, texCoord*vec2(1.0, 1.256).yx);
-	rock_t.rgb *= vec3(2.5, 2.0, 2.0);
-	grass_t = texture(grass, texCoord*12.0);//*vec4(0.0, 1.5, 0.0, 1.0);
-	vec4 grass_t1 = texture(grass1, texCoord*12.0);//*
-	float perlinBlendingCoeff = clamp(perlin(WorldPos.x, WorldPos.z, 2)*2.0 - 0.2, 0.0, 1.0);
-	grass_t = mix(grass_t*1.3, grass_t1*0.75, perlinBlendingCoeff);
-	grass_t.rgb *= 0.5;
-
-	float grassCoverage = u_grassCoverage;//pow(u_grassCoverage, 0.33);
-
-	
-	vec4 heightColor;
-	float cosV = abs(dot(normal, vec3(0.0, 1.0, 0.0)));
-	float tenPercentGrass = grassCoverage - grassCoverage*0.1;
-	float blendingCoeff = pow((cosV - tenPercentGrass) / (grassCoverage * 0.1), 1.0);
-
-	if(height <= waterHeight + trans){
-		heightColor = sand_t;
-    }else if(height <= waterHeight + 2*trans){
-		heightColor = mix(sand_t, grass_t, pow( (height - waterHeight - trans) / trans, 1.0));
-    }else if(cosV > grassCoverage){
-		heightColor = grass_t;
-		mix(normal, vec3(0.0, 1.0, 0.0), 0.25);
-    }else if(cosV > tenPercentGrass){
-		heightColor = mix(rock_t , grass_t , blendingCoeff);
-		normal = mix(TBN*(texture(rockNormal, texCoord*vec2(2.0, 2.5).yx).rgb*2.0 - 1.0), normal, blendingCoeff);
-    }else{
-		heightColor = rock_t;
-		normal = TBN*(texture(rockNormal, texCoord*vec2(2.0, 2.5).yx).rgb*2.0 - 1.0);
-		
-	}
-
-	return heightColor;
-}*/

@@ -12,7 +12,7 @@ Application* CreateApplication()
 }
 
 Application::Application(const AppSpecification& appSpec):
-    m_spec(appSpec),m_camera(Camera(45.0f, 0.1f, 5000.0f))
+    m_spec(appSpec),m_camera(Camera(45.0f, 0.1f, 50000.0f))
 {
     Init();
     InitShader();
@@ -104,7 +104,7 @@ void Application::InitShader()
 void Application::Run()
 {
     m_running = true;
-    m_scene =std::make_unique<Scene>(Sky::SkyDome);
+    m_scene =std::make_unique<Scene>(Sky::SkyBox);
  //   m_camera.LookAtBoundingBox(m_scene.getSceneBounds());
     m_camera.LookAt(glm::vec3(0.0f, 0.0f, -1.0f));
     // render loop
@@ -130,7 +130,9 @@ void Application::Run()
         // render
         glClearColor(0.08f, 0.16f, 0.18f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
+        glFrontFace(GL_CW);
+        glCullFace(GL_BACK);
+    //    glEnable(GL_CULL_FACE);
         glEnable(GL_DEPTH_TEST);
 
         // enable shader befsore setting uniforms
@@ -145,20 +147,20 @@ void Application::Run()
         m_scene->RenderPhysicsObjects(m_shader_scene, false);
 
         // Render skyBox
-        //glDepthFunc(GL_LEQUAL);
-        //m_shader_skyBox.activate();
+        glDepthFunc(GL_LEQUAL);
+        m_shader_skyBox.activate();
 
-        //glm::mat4 model_skyBox = glm::mat4(1.0f);
-        //glm::mat4 view_skyBox = m_camera.GetViewMatrix();
-        //glm::mat4 projection_skyBox = m_camera.GetProjectionMatrix();
-        //m_shader_skyBox.setMat_MVP(model_skyBox, view_skyBox, projection_skyBox);
+        glm::mat4 model_skyBox = glm::mat4(1.0f);
+        glm::mat4 view_skyBox = m_camera.GetViewMatrix();
+        glm::mat4 projection_skyBox = m_camera.GetProjectionMatrix();
+        m_shader_skyBox.setMat_MVP(model_skyBox, view_skyBox, projection_skyBox);
 
-        //m_scene.RenderSkyBox(m_shader_skyBox);
-        //glDepthFunc(GL_LESS);
+        m_scene->RenderSkyBox(m_shader_skyBox);
+        glDepthFunc(GL_LESS);
 
 
         // Render skyDome
-        glDepthFunc(GL_LEQUAL);
+       /* glDepthFunc(GL_LEQUAL);
         m_shader_skyDome.activate();
 
         glm::mat4 model_skyDome = glm::mat4(1.0f);
@@ -167,7 +169,7 @@ void Application::Run()
         m_shader_skyDome.setMat_MVP(model_skyDome, view_skyDome, projection_skyDome);
 
         m_scene->RenderSkyDome(m_shader_skyDome);
-        glDepthFunc(GL_LESS);
+        glDepthFunc(GL_LESS);*/
 
         // Render terrain
         m_shader_terrain.activate();
@@ -178,7 +180,24 @@ void Application::Run()
         glm::mat4 view_terrain = m_camera.GetViewMatrix();
         glm::mat4 projection_terrain = m_camera.GetProjectionMatrix();
         m_shader_terrain.setMat_MVP(model_terrain, view_terrain, projection_terrain);
+        // Change light over time
+        static float angle = 0.0f;
+        angle += 0.003f;
+        if (angle > 2.0f * 3.1415926f)
+        {
+            angle = 0.0f;
+        }
 
+        // Simulate sun's path
+        float radius = 20.0f; // Can adjust based on desired orbit size
+        float sunHeightMax = 5.0f; // Maximum height of the sun
+        float sunHeightMin = -5.0f; // Minimum height of the sun (can be negative if you want the sun to go below the horizon)
+        float y = sunHeightMin + (sunHeightMax - sunHeightMin) * 0.5f * (1 + sinf(angle - 3.1415926 / 2.0f));
+        // Calculate sun position
+        glm::vec3 LightDir(sinf(angle) * radius, y, cosf(angle) * radius);
+
+        glm::vec3 ReversedLightDir = -glm::normalize(LightDir);
+        m_shader_terrain.setVec3("gReversedLightDir", ReversedLightDir.x, ReversedLightDir.y, ReversedLightDir.z );
         m_scene->RenderTerrain(m_shader_terrain);
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)

@@ -93,30 +93,39 @@ void BaseTerrain::InitTerrain()
 		}
 	}
 
+	// Update Normals for vertices
+	CalculateNormals(vertices, indices);
+
 	// textures
 	std::vector<Texture> textures_terrain;
 
-	//Texture sand = LoadTerrainTextures("sand", path_terrain_texture + "sand.jpg");
-	//Texture grass = LoadTerrainTextures("grass", path_terrain_texture + "grass.jpg");
-	//Texture rdiffuse = LoadTerrainTextures("rdiffuse", path_terrain_texture + "rdiffuse.jpg");
-	//Texture snow = LoadTerrainTextures("snow", path_terrain_texture + "snow.jpg");
+	Texture sand = LoadTerrainTextures("gTextureHeight0", path_terrain_texture + "rdiffuse.jpg");
+	Texture grass = LoadTerrainTextures("gTextureHeight1", path_terrain_texture + "sand.jpg");
+	Texture rdiffuse = LoadTerrainTextures("gTextureHeight2", path_terrain_texture + "snow.jpg");
+	Texture snow = LoadTerrainTextures("gTextureHeight3", path_terrain_texture + "terrainTexture.jpg");
 	//Texture rnormal = LoadTerrainTextures("rnormal", path_terrain_texture + "rnormal.jpg");
 	//Texture terrainTexture = LoadTerrainTextures("terrainTexture", path_terrain_texture + "terrainTexture.jpg");
 //	Texture SamplerTerrain = LoadTerrainTextures("SamplerTerrain", path_terrain_texture + "terrain_surface.png");
-	Texture SamplerTerrain = LoadTerrainTextures("SamplerTerrain", path_terrain_texture + "terrain_surface.png");
+//	Texture SamplerTerrain = LoadTerrainTextures("SamplerTerrain", path_terrain_texture + "terrain_surface.png");
 	//	Texture SamplerTerrain;
 
-	//textures_terrain.push_back(sand);
-	//textures_terrain.push_back(grass);
-	//textures_terrain.push_back(rdiffuse);
-	//textures_terrain.push_back(snow);
+	textures_terrain.push_back(sand);
+	textures_terrain.push_back(grass);
+	textures_terrain.push_back(rdiffuse);
+	textures_terrain.push_back(snow);
 	//textures_terrain.push_back(rnormal);
 	//textures_terrain.push_back(terrainTexture);
-	textures_terrain.push_back(SamplerTerrain);
+//	textures_terrain.push_back(SamplerTerrain);
 
 	m_terrain = new Mesh(vertices, indices, textures_terrain);
 }
-
+void BaseTerrain::UpdateParamsForShaders()
+{
+	static float Height0 = 64.0f;
+	static float Height1 = 128.0f;
+	static float Height2 = 192.0f;
+	static float Height3 = 256.0f;
+}
 
 Texture BaseTerrain::LoadTerrainTextures(std::string name_texture,std::string pathFile_texture)
 {
@@ -211,7 +220,7 @@ std::vector<Vertex> BaseTerrain::InitVerticesWithHeightMapFromFile(const char* i
 		return {};
 	}
 	
-	static float yScale = 64.0f / 256.0f, yShift = 16.0f;  // apply a scale+shift to the height data
+	static float yScale = 170.0f / 256.0f, yShift = 10.0f;  // apply a scale+shift to the height data
 	
 	if (nChannels == 1 || nChannels == 3 || nChannels == 4) //RGB || RGBA
 	{
@@ -228,11 +237,13 @@ std::vector<Vertex> BaseTerrain::InitVerticesWithHeightMapFromFile(const char* i
 				float z = -(int)width / 2.0f + j;
 				Vertex vertex;
 				vertex.Position = glm::vec3(x, (int)h * yScale - yShift, z);
-				//add normal
+				//Normals will be computed later
+				
 				float x_n = 0.0;
 				float y_n = 1.0;
 				float z_n = 0.0;
 				vertex.Normal = glm::vec3(x_n, y_n, z_n);
+				
 
 				// Add texture coordinates
 				float u = (float)j / (width - 1);
@@ -246,7 +257,31 @@ std::vector<Vertex> BaseTerrain::InitVerticesWithHeightMapFromFile(const char* i
 	stbi_image_free(data);
 	return vertices;
 }
+void BaseTerrain::CalculateNormals(std::vector<Vertex>& Vertices, std::vector<unsigned int>& Indices)
+{
+	unsigned int Index = 0;
 
+	// Accumulate each triangle normal into each of the triangle vertices
+	for (unsigned int i = 0; i < Indices.size(); i += 3) {
+		unsigned int Index0 = Indices[i];
+		unsigned int Index1 = Indices[i + 1];
+		unsigned int Index2 = Indices[i + 2];
+		glm::vec3 v1 = Vertices[Index1].Position - Vertices[Index0].Position;
+		glm::vec3 v2 = Vertices[Index2].Position - Vertices[Index0].Position;
+		glm::vec3 Normal = glm::cross( v1,v2);
+		Normal = glm::normalize(Normal);
+
+		Vertices[Index0].Normal += Normal;
+		Vertices[Index1].Normal += Normal;
+		Vertices[Index2].Normal += Normal;
+	}
+
+	// Normalize all the vertex normals
+	for (unsigned int i = 0; i < Vertices.size(); i++) 
+	{
+		Vertices[i].Normal = glm::normalize(Vertices[i].Normal);
+	}
+}
 void BaseTerrain::SetPosition(const glm::vec3& newPosition)
 {
 	glm::vec3 pos = GetPosition();

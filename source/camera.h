@@ -19,17 +19,24 @@ enum Camera_Movement {
     RIGHT
 };
 
+enum class TypeCameraView 
+{
+	FirstPerson=0,
+	ThirdPerson=1
+};
+
 // Default camera values
 const float YAW         = -90.0f;
 const float PITCH       =  0.0f;
-const float TRANSLATION_SPEED =  500.0f;
-const float ROTATION_SPEED = 2.0f;
+const float TRANSLATION_SPEED =  200.0f;
+const float ROTATION_SPEED = 1.2f;
 const float ZOOM        =  45.0f;
 
 class Camera
 {
 public:
-	Camera(float verticalFOV, float nearClip, float farClip);
+	Camera(TypeCameraView typeView=TypeCameraView::ThirdPerson,
+			float verticalFOV=45.0f, float nearClip=0.0f, float farClip=100.f);
 
 	bool OnUpdate(GLFWwindow* window, float deltaTime =0.01);
 	void OnResize(int viewport_Width, int viewport_Height);
@@ -48,15 +55,31 @@ public:
 	void LookAtBoundingBox(const BoundingBox& boundingBox);
 	void LookAt(const glm::vec3& target);
 	void SetPosition(glm::vec3&& pos);
+	void SetPosition(glm::vec3& pos);
 
 	int GetViewPortWidth() { return m_ViewportWidth; };
 	int GetViewPortHeight() { return m_ViewportHeight; };
+
+	inline bool isOnGroundMoving(GLFWwindow* window)
+	{
+		if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS ||
+			glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS ||
+			glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS ||
+			glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+			return true;
+
+		return false;
+
+	};
+
+	TypeCameraView m_typeView = TypeCameraView::FirstPerson;
 
 private:
 	void RecalculateProjection();
 	void RecalculateView();
 
 private:
+	
 	glm::mat4 m_Projection{ 1.0f };
 	glm::mat4 m_View{ 1.0f };
 	glm::mat4 m_InverseProjection{ 1.0f };
@@ -75,7 +98,11 @@ private:
 
 	int m_ViewportWidth = 800, m_ViewportHeight = 600;
 
-	bool isWireFrame = false;
+	bool m_isWireFrame = false;
+
+	bool m_isMoved = false;
+
+	bool m_isOnGroundMoving = false;
 };
 
 #endif

@@ -12,9 +12,11 @@ Application* CreateApplication()
 }
 
 Application::Application(const AppSpecification& appSpec):
-    m_spec(appSpec),m_camera(Camera(45.0f, 0.1f, 50000.0f))
+                        m_spec(appSpec), 
+                        m_camera(std::make_unique<Camera>(TypeCameraView::ThirdPerson, 
+                                                            45.0f, 0.1f, 50000.0f))
 {
-    Init();
+    InitGraphicEnvironment();
     InitShader();
 }
 
@@ -22,7 +24,7 @@ Application::~Application()
 {
 }
 
-void Application::Init()
+void Application::InitGraphicEnvironment()
 {    
     // glfw setting 
     glfwInit();
@@ -56,7 +58,7 @@ void Application::Init()
     glfwSetScrollCallback(m_window, [](GLFWwindow* window, double xoffset, double yoffset) 
     {
         Application* instance = static_cast<Application*>(glfwGetWindowUserPointer(window));
-        instance->m_camera.ProcessMouseScroll(static_cast<float>(yoffset));
+        instance->m_camera->ProcessMouseScroll(static_cast<float>(yoffset));
     });
 
     glfwSetMouseButtonCallback(m_window, [](GLFWwindow* window, int button, int action, int mods)
@@ -94,19 +96,36 @@ void Application::InitShader()
     // tell stb_image.h to flip loaded texture's on the y-axis (before loading model).
     stbi_set_flip_vertically_on_load(true);
 
-    m_shader_scene = Shader("source/shaders/core_vertex.glsl", "source/shaders/core_fragment.glsl");
-    m_shader_skyBox = Shader("source/shaders/skybox_vertex.glsl", "source/shaders/skybox_fragment.glsl");
+    m_shader_scene   = Shader("source/shaders/core_vertex.glsl", "source/shaders/core_fragment.glsl");
+    m_shader_skyBox  = Shader("source/shaders/skybox_vertex.glsl", "source/shaders/skybox_fragment.glsl");
     m_shader_terrain = Shader("source/shaders/terrain_vertex.glsl", "source/shaders/terrain_fragment.glsl");
     m_shader_skyDome = Shader("source/shaders/skydome_vertex.glsl", "source/shaders/skydome_fragment.glsl");
 
+}
+
+void Application::ConfigCamera()
+{
+    if (m_camera->m_typeView == TypeCameraView::FirstPerson)
+    {
+        //glm::vec3 cam_newPos = m_scene->getTerrain()->ConstrainCameraPosToTerrain(m_camera->GetPosition());
+        ///*     m_camera->SetPosition(cam_newPos);*/
+        //m_camera->LookAt(glm::vec3(0.0f, 0.0f, -1.0f));
+    }
+    else if (m_camera->m_typeView == TypeCameraView::ThirdPerson)
+    {
+        m_camera->LookAtBoundingBox(m_scene->getTerrain()->GetBoundingBox());
+    }
+    
 }
 
 void Application::Run()
 {
     m_running = true;
     m_scene =std::make_unique<Scene>(Sky::SkyBox);
- //   m_camera.LookAtBoundingBox(m_scene.getSceneBounds());
-    m_camera.LookAt(glm::vec3(0.0f, 0.0f, -1.0f));
+
+    // Configurate camera depending on the scene and type of cameraView
+    ConfigCamera();
+
     // render loop
     while (!glfwWindowShouldClose(m_window))
     {
@@ -122,9 +141,15 @@ void Application::Run()
             m_scene->ResetScene();
         }
 
-        MoveObjects();
+     //   MoveObjects();
 
-        m_camera.OnUpdate(m_window, m_frameTime);
+        if (m_camera->m_typeView==TypeCameraView::FirstPerson)
+        {
+            glm::vec3 cam_newPos = m_scene->getTerrain()->ConstrainCameraPosToTerrain(m_camera->GetPosition());
+            m_camera->SetPosition(cam_newPos);
+        }
+        m_camera->OnUpdate(m_window, m_frameTime);
+
         m_scene->OnUpdate(m_frameTime);
        
         // render
@@ -135,50 +160,58 @@ void Application::Run()
     //    glEnable(GL_CULL_FACE);
         glEnable(GL_DEPTH_TEST);
 
+        // Render scene
+       
         // enable shader befsore setting uniforms
         m_shader_scene.activate();
 
         // Render Scene's Objects
         glm::mat4 model = glm::mat4(1.0f);
-        glm::mat4 view = m_camera.GetViewMatrix();
-        glm::mat4 projection = m_camera.GetProjectionMatrix();
+        glm::mat4 view = m_camera->GetViewMatrix();
+        glm::mat4 projection = m_camera->GetProjectionMatrix();
         m_shader_scene.setMat_MVP(model, view, projection);
 
         m_scene->RenderPhysicsObjects(m_shader_scene, false);
-
+        /***********************/
+         
         // Render skyBox
-        glDepthFunc(GL_LEQUAL);
-        m_shader_skyBox.activate();
+        if (m_scene->typeSky() == Sky::SkyBox)
+        {
+            glDepthFunc(GL_LEQUAL);
+            glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+            m_shader_skyBox.activate();
 
-        glm::mat4 model_skyBox = glm::mat4(1.0f);
-        glm::mat4 view_skyBox = m_camera.GetViewMatrix();
-        glm::mat4 projection_skyBox = m_camera.GetProjectionMatrix();
-        m_shader_skyBox.setMat_MVP(model_skyBox, view_skyBox, projection_skyBox);
+            glm::mat4 model_skyBox = glm::mat4(1.0f);
+            glm::mat4 view_skyBox = m_camera->GetViewMatrix();
+            glm::mat4 projection_skyBox = m_camera->GetProjectionMatrix();
+            m_shader_skyBox.setMat_MVP(model_skyBox, view_skyBox, projection_skyBox);
 
-        m_scene->RenderSkyBox(m_shader_skyBox);
-        glDepthFunc(GL_LESS);
+            m_scene->RenderSkyBox(m_shader_skyBox);
+            glDepthFunc(GL_LESS);
+        }
+        else if (m_scene->typeSky() == Sky::SkyDome)
+        {
+            glDepthFunc(GL_LEQUAL);
+            m_shader_skyDome.activate();
 
+            glm::mat4 model_skyDome = glm::mat4(1.0f);
+            glm::mat4 view_skyDome = m_camera->GetViewMatrix();
+            glm::mat4 projection_skyDome = m_camera->GetProjectionMatrix();
+            m_shader_skyDome.setMat_MVP(model_skyDome, view_skyDome, projection_skyDome);
 
-        // Render skyDome
-       /* glDepthFunc(GL_LEQUAL);
-        m_shader_skyDome.activate();
-
-        glm::mat4 model_skyDome = glm::mat4(1.0f);
-        glm::mat4 view_skyDome = m_camera.GetViewMatrix();
-        glm::mat4 projection_skyDome = m_camera.GetProjectionMatrix();
-        m_shader_skyDome.setMat_MVP(model_skyDome, view_skyDome, projection_skyDome);
-
-        m_scene->RenderSkyDome(m_shader_skyDome);
-        glDepthFunc(GL_LESS);*/
-
+            m_scene->RenderSkyDome(m_shader_skyDome);
+            glDepthFunc(GL_LESS);
+        }
+        /***********************/
+         
         // Render terrain
         m_shader_terrain.activate();
 
         glm::mat4 model_terrain = glm::mat4(1.0f);
         // Apply the scaling transformation
         model_terrain = glm::scale(model_terrain, m_scene->getTerrain()->GetScale());
-        glm::mat4 view_terrain = m_camera.GetViewMatrix();
-        glm::mat4 projection_terrain = m_camera.GetProjectionMatrix();
+        glm::mat4 view_terrain = m_camera->GetViewMatrix();
+        glm::mat4 projection_terrain = m_camera->GetProjectionMatrix();
         m_shader_terrain.setMat_MVP(model_terrain, view_terrain, projection_terrain);
         // Change light over time
         static float angle = 0.0f;
@@ -189,9 +222,9 @@ void Application::Run()
         }
 
         // Simulate sun's path
-        float radius = 20.0f; // Can adjust based on desired orbit size
-        float sunHeightMax = 5.0f; // Maximum height of the sun
-        float sunHeightMin = -5.0f; // Minimum height of the sun (can be negative if you want the sun to go below the horizon)
+        float radius = 10.0f; // Can adjust based on desired orbit size
+        float sunHeightMax = 10.0f; // Maximum height of the sun
+        float sunHeightMin = -10.0f; // Minimum height of the sun (can be negative if you want the sun to go below the horizon)
         float y = sunHeightMin + (sunHeightMax - sunHeightMin) * 0.5f * (1 + sinf(angle - 3.1415926 / 2.0f));
         // Calculate sun position
         glm::vec3 LightDir(sinf(angle) * radius, y, cosf(angle) * radius);
@@ -199,7 +232,8 @@ void Application::Run()
         glm::vec3 ReversedLightDir = -glm::normalize(LightDir);
         m_shader_terrain.setVec3("gReversedLightDir", ReversedLightDir.x, ReversedLightDir.y, ReversedLightDir.z );
         m_scene->RenderTerrain(m_shader_terrain);
-
+        /***********************/
+         
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
         glfwSwapBuffers(m_window);
@@ -234,6 +268,8 @@ void Application::DisplayFPS(float currentFrame)
         counter = 0;
     }
 }
+
+
 
 void Application::MoveObjects()
 {
@@ -314,16 +350,16 @@ void Application::MoveObjects()
 bool Application::RayIntersectsBoundingBox(glm::vec2& mousePos,const BoundingBox& bbox, glm::vec3& intersectPoint)
 {
     // Convert mouse position to normalized device coordinates (NDC)
-    float ndcX = (2.0f * mousePos.x) / m_camera.GetViewPortWidth() - 1.0f;
-    float ndcY = 1.0f - (2.0f * mousePos.y) / m_camera.GetViewPortHeight();
+    float ndcX = (2.0f * mousePos.x) / m_camera->GetViewPortWidth() - 1.0f;
+    float ndcY = 1.0f - (2.0f * mousePos.y) / m_camera->GetViewPortHeight();
 
     // Construct the near and far points in clip space
     glm::vec4 nearPoint = glm::vec4(ndcX, ndcY, 0.0f, 1.0f);
     glm::vec4 farPoint = glm::vec4(ndcX, ndcY, 1.0f, 1.0f);
 
     // Convert the near and far points to view space
-    glm::mat4 inverseProjection = m_camera.GetInverseProjectionMatrix();
-    glm::mat4 inverseView = m_camera.GetInverseViewMatrix();
+    glm::mat4 inverseProjection = m_camera->GetInverseProjectionMatrix();
+    glm::mat4 inverseView = m_camera->GetInverseViewMatrix();
 
     glm::vec4 nearPointView = inverseView * (inverseProjection * nearPoint);
     nearPointView /= nearPointView.w;

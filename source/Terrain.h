@@ -12,7 +12,7 @@ static std::string heightMapFile = "source/resources/terrain/heightmap_paris.png
 class BaseTerrain:public PhysicsObject
 {
 public:
-	BaseTerrain(glm::vec3 scale= glm::vec3(5.0f,5.0f,5.0f));
+	BaseTerrain(glm::vec3 scale= glm::vec3(1.0f,1.0f,1.0f));
 
 	virtual ~BaseTerrain();
 
@@ -29,7 +29,10 @@ public:
 	void InitTerrain();
 	void UpdateParamsForShaders();
 	Texture LoadTerrainTextures(std::string name_texture, std::string pathFile_texture);
-	float GetHeightForPos(unsigned int x,unsigned int z, std::vector<std::vector<float>> heightMap);
+	float GetHeightForPos(float x,float z);
+	float GetHeightInterpolated(float x, float z);
+	
+	glm::vec3 ConstrainCameraPosToTerrain(glm::vec3 camPos);
 	std::vector<Vertex> InitVerticesWithHeightMapFromFile(const char* imagePath, unsigned int& width, unsigned int& height);
 
 	void CalculateNormals(std::vector<Vertex>& Vertices, std::vector<unsigned int>& Indices);
@@ -52,4 +55,6 @@ private:
 	unsigned int m_depth=0; //z-axis
 
 	BoundingBox m_bbox;
+
+	std::vector<std::vector<float>> m_heightMap;
 };

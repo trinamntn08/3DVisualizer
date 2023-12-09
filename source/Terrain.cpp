@@ -226,6 +226,7 @@ std::vector<Vertex> BaseTerrain::InitVerticesWithHeightMapFromFile(const char* i
 	{
 		for (int i = 0; i < height; ++i)
 		{
+			std::vector<float> height_width;
 			for (int j = 0; j < width; ++j)
 			{
 				// retrieve texel for (i,j) tex coord
@@ -235,8 +236,10 @@ std::vector<Vertex> BaseTerrain::InitVerticesWithHeightMapFromFile(const char* i
 
 				float x = -(int)height / 2.0f + i;
 				float z = -(int)width / 2.0f + j;
+				float y = (int)h * yScale - yShift;
 				Vertex vertex;
-				vertex.Position = glm::vec3(x, (int)h * yScale - yShift, z);
+				vertex.Position = glm::vec3(x, y, z);
+				//    vertex.Position = glm::vec3(x, 1.0f, z);
 				//Normals will be computed later
 				
 				float x_n = 0.0;
@@ -251,7 +254,10 @@ std::vector<Vertex> BaseTerrain::InitVerticesWithHeightMapFromFile(const char* i
 				vertex.TexCoords = glm::vec2(u,v);
 
 				vertices.push_back(vertex);
+
+				height_width.push_back(y);
 			}
+			m_heightMap.push_back(height_width);
 		}
 	}
 	stbi_image_free(data);
@@ -327,20 +333,83 @@ void BaseTerrain::UpdateBoundingBox(glm::vec3 deltaPos)
 }
 
 
-float BaseTerrain::GetHeightForPos(unsigned int x, unsigned int z, std::vector<std::vector<float>> heightMap)
+float BaseTerrain::GetHeightForPos(float x, float z)
 {
-	// Check if the height map is not empty
-	assert(!heightMap.empty() && !heightMap[0].empty());
+	float pos_x = x / 1.0f;
+	float pos_z = z / 1.0f;
 
-	int img_x = x;
-	int img_z = z;
-	// Check boundaries to avoid accessing out-of-bounds indices
-	if (img_z < heightMap.size() && img_x < heightMap[0].size())
-	{
-		return heightMap[img_z][img_x];
-	}
-	else
+	// Apply the same translation as in the heightmap creation code
+	pos_x += (int)m_heightMap.size() / 2.0f;
+	pos_z += (int)m_heightMap[0].size() / 2.0f;
+
+	return GetHeightInterpolated(pos_x, pos_z);
+}
+float BaseTerrain::GetHeightInterpolated(float x, float z)
+{
+	// Ensure x and z are within valid bounds
+	if (x < 0.0f || x >= m_heightMap.size() - 1 || z < 0.0f || z >= m_heightMap[0].size() - 1) 
 	{
 		return 0.0f;
 	}
+
+	// Convert (x, z) coordinates to integer indices
+	int xIndex = static_cast<int>(x);
+	int zIndex = static_cast<int>(z);
+
+	// Calculate the fractional parts for interpolation
+	float xFraction = x - xIndex;
+	float zFraction = z - zIndex;
+
+	// Perform bilinear interpolation
+	float height00 = m_heightMap[xIndex][zIndex];
+	float height01 = m_heightMap[xIndex][zIndex + 1];
+	float height10 = m_heightMap[xIndex + 1][zIndex];
+	float height11 = m_heightMap[xIndex + 1][zIndex + 1];
+
+	float interpolatedHeightTop = glm::mix(height00, height01, zFraction);
+	float interpolatedHeightBottom = glm::mix(height10, height11, zFraction);
+
+	return glm::mix(interpolatedHeightTop, interpolatedHeightBottom, xFraction);
+
+}
+glm::vec3 BaseTerrain::ConstrainCameraPosToTerrain(glm::vec3 camPos)
+{
+	glm::vec3 newCameraPos = camPos;
+
+	// Make sure camera doesn't go outside of the terrain bounds
+	// Constrain to the bounding box
+	if (camPos.x < m_bbox.GetMinBounds().x)
+	{
+		newCameraPos.x = m_bbox.GetMinBounds().x - 1.0f;
+	}
+
+	if (camPos.z < m_bbox.GetMinBounds().z) 
+	{
+		newCameraPos.z = m_bbox.GetMinBounds().z - 1.0f;
+	}
+
+	if (camPos.x > m_bbox.GetMaxBounds().x) 
+	{
+		newCameraPos.x = m_bbox.GetMaxBounds().x - 1.0f;
+	}
+
+	if (camPos.z > m_bbox.GetMaxBounds().z) {
+		newCameraPos.z = m_bbox.GetMaxBounds().z-1.0f;
+	}
+
+	newCameraPos.y = GetHeightForPos(newCameraPos.x / m_scale.x, newCameraPos.z / m_scale.z);
+	// Add an offset to simulate walking height
+	static float walkingHeightOffset = 20.0f;
+	newCameraPos.y += walkingHeightOffset;
+
+	// Apply smoothed oscillation to simulate walking motion
+	float oscillationFactor = 1.0f;
+	float t = glm::smoothstep(-1.0f, 1.0f, sinf(newCameraPos.x * oscillationFactor) + cosf(newCameraPos.z * oscillationFactor));
+
+	// Scale and offset the smoothstep result to control amplitude
+	float amplitude = 1/250.0f; // Adjust this value to control the amplitude of oscillation
+	float smoothedOscillation = t * amplitude;
+	// Apply the smoothed oscillation to the y-coordinate
+	newCameraPos.y += smoothedOscillation;
+	return newCameraPos;
 }

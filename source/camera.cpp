@@ -1,8 +1,10 @@
 #include"camera.h"
 #include <glad/glad.h>
 #include"Logger.h"
-Camera::Camera(float verticalFOV, float nearClip, float farClip)
-	: m_VerticalFOV(verticalFOV), m_NearClip(nearClip), m_FarClip(farClip)
+
+Camera::Camera(TypeCameraView typeView,float verticalFOV, float nearClip, float farClip)
+				:m_typeView(typeView), m_VerticalFOV(verticalFOV), 
+				 m_NearClip(nearClip), m_FarClip(farClip)
 {
 	m_ForwardDirection = glm::vec3(0, 0, -1);
 	m_Position = glm::vec3(0, 0.0f, 10.0f);
@@ -23,7 +25,7 @@ bool Camera::OnUpdate(GLFWwindow* window,float deltaTime)
 	int viewport_Width, viewport_Height;
 	glfwGetFramebufferSize(window, &viewport_Width, &viewport_Height);
 	OnResize(viewport_Width, viewport_Height);
-	bool moved = false;
+//	bool moved = false;
 	constexpr glm::vec3 upDirection(0.0f, 1.0f, 0.0f);
 	glm::vec3 rightDirection = glm::cross(m_ForwardDirection, upDirection);
 
@@ -64,7 +66,7 @@ bool Camera::OnUpdate(GLFWwindow* window,float deltaTime)
 
 			}
 
-				moved = true;
+			m_isMoved = true;
 			
 		}
 	}
@@ -77,41 +79,89 @@ bool Camera::OnUpdate(GLFWwindow* window,float deltaTime)
 	}
 
 	// Keyboard 
-	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+	switch (m_typeView)
 	{
-		m_Position += m_ForwardDirection * velocity;
-		moved = true;
-	}
-	else if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+	case TypeCameraView::FirstPerson:
 	{
-		m_Position -= m_ForwardDirection * velocity;
-		moved = true;
+		static const float smoothFactor = 7.0f;
+		if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+		{
+			m_Position.x += m_ForwardDirection.x * velocity/ smoothFactor;
+			m_Position.z += m_ForwardDirection.z * velocity / smoothFactor;
+			m_isMoved = true;
+		}
+		else if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+		{
+			m_Position.x -= m_ForwardDirection.x * velocity / smoothFactor;
+			m_Position.z -= m_ForwardDirection.z * velocity / smoothFactor;
+			m_isMoved = true;
+		}
+		if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+		{
+			m_Position.x -= rightDirection.x * velocity / smoothFactor;
+			m_Position.z -= rightDirection.z * velocity / smoothFactor;
+			m_isMoved = true;
+		}
+		if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+		{
+			m_Position.x += rightDirection.x * velocity / smoothFactor;
+			m_Position.z += rightDirection.z * velocity / smoothFactor;
+			m_isMoved = true;
+		}
 	}
-	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+		break;
+	case TypeCameraView::ThirdPerson:
 	{
-		m_Position -= rightDirection * velocity;
-		moved = true;
+		if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+		{
+			m_Position += m_ForwardDirection * velocity;
+			m_isMoved = true;
+		}
+		else if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+		{
+			m_Position -= m_ForwardDirection * velocity;
+			m_isMoved = true;
+		}
+		if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+		{
+			m_Position -= rightDirection * velocity;
+			m_isMoved = true;
+		}
+		if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+		{
+			m_Position += rightDirection * velocity;
+			m_isMoved = true;
+		}
+		if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
+		{
+			m_Position -= upDirection * velocity;
+			m_isMoved = true;
+		}
+		else if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
+		{
+			m_Position += upDirection * velocity;
+			m_isMoved = true;
+		}
 	}
-	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+		break;
+	default:
+		break;
+	}
+	// Swith type of camera View 
+	if (glfwGetKey(window, GLFW_KEY_KP_1) == GLFW_PRESS)
 	{
-		m_Position += rightDirection * velocity;
-		moved = true;
+		m_typeView = TypeCameraView::FirstPerson;
 	}
-	if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
+	else if (glfwGetKey(window, GLFW_KEY_KP_3) == GLFW_PRESS)
 	{
-		m_Position -= upDirection * velocity;
-		moved = true;
+		m_typeView = TypeCameraView::ThirdPerson;
 	}
-	else if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
-	{
-		m_Position += upDirection * velocity;
-		moved = true;
-	}
-	else if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
+	
+	if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
 	{
 		Log::info("Presse Space !!!");
-		isWireFrame = !isWireFrame;
-		if (isWireFrame)
+		m_isWireFrame = !m_isWireFrame;
+		if (m_isWireFrame)
 		{
 			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 		}
@@ -127,11 +177,11 @@ bool Camera::OnUpdate(GLFWwindow* window,float deltaTime)
 		return false;
 	}
 
-	if (moved)
+	if (m_isMoved)
 	{
 		RecalculateView();
 	}
-	return moved;
+	return m_isMoved;
 }
 
 float Camera::GetRotationSpeed()
@@ -167,9 +217,8 @@ void Camera::LookAtBoundingBox(const BoundingBox& boundingBox)
 	// Calculate camera position and target to fit the bounding box
 	glm::vec3 boundingBoxCenter = boundingBox.GetCenter();
 	float boundingBoxRadius = boundingBox.GetBoundingBoxRadius();
-
 	// Raise the camera position along the y-axis to view the object from above
-	m_Position = boundingBoxCenter + glm::vec3(0.0f, 0.0f, 2.0f * boundingBoxRadius);
+	m_Position = boundingBoxCenter + glm::vec3(0.0f, 0.0f, 1.5* boundingBoxRadius);
 	m_ForwardDirection = glm::normalize(boundingBoxCenter - m_Position);
 
 	RecalculateView();
@@ -187,7 +236,11 @@ void Camera::SetPosition(glm::vec3&& pos)
 	m_Position = pos;
 	RecalculateView();
 }
-
+void Camera::SetPosition(glm::vec3& pos)
+{
+	m_Position = pos;
+	RecalculateView();
+}
 
 
 

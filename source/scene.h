@@ -45,6 +45,8 @@ public:
     void UpdatePhysicsObjectToFitScene(PhysicsObject& object);
     inline int numberOfObjects() { return m_allPhysicsObjects.size();};
 
+    inline Sky typeSky() { return m_typeSky; };
+
 
     void Render();
     void RenderPhysicsObjects(Shader & shader, bool isRender_BBoxes = false);

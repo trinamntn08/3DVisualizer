@@ -32,13 +32,15 @@ public:
 	Application(const AppSpecification& appSpec=AppSpecification());
 	~Application();
 
-	void Init();
+	void InitGraphicEnvironment();
 	void InitShader();
 
+	void ConfigCamera();
 
 	void Run();
 
 	void DisplayFPS(float currentTime);
+
 
 	void MoveObjects();
 	bool RayIntersectsBoundingBox(glm::vec2 &mousePos,const BoundingBox& bbox, glm::vec3& intersectPoint);
@@ -63,7 +65,7 @@ private:
 	Shader m_shader_skyDome;
 	Shader m_shader_terrain;
 
-	Camera m_camera;
+	std::unique_ptr<Camera> m_camera;
 	std::unique_ptr<Scene> m_scene;
 
 	// Mouse

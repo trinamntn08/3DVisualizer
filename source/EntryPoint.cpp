@@ -5,9 +5,12 @@ extern Application* CreateApplication();
 
 int main()
 {
-	Application* app = CreateApplication();
-	app->Run();
-	delete app;
+	std::unique_ptr<Application> app(CreateApplication());
+	if (app)
+	{
+		app->Run();
+	}
+
 
 	return 0;
 }

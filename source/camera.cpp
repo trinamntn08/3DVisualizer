@@ -1,5 +1,4 @@
 #include"camera.h"
-#include <glad/glad.h>
 #include"Logger.h"
 
 Camera::Camera(TypeCameraView typeView,float verticalFOV, float nearClip, float farClip)

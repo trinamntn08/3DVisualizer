@@ -1,6 +1,6 @@
 #ifndef SHADER_H
 #define SHADER_H
-
+#define NOMINMAX
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 
@@ -16,6 +16,7 @@ public:
     Shader() {};
     // ------------------------------------------------------------------------
     Shader(const char* vertexPath, const char* fragmentPath, const char* geometryPath = nullptr);
+    Shader(const char* vertexPath, const char* fragmentPath, const char* geometryPath, const char* tessControlPath, const char* tessEvalPath);
     // ------------------------------------------------------------------------
     void activate()
     {

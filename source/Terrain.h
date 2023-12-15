@@ -9,6 +9,9 @@ class Shader;
 static std::string path_terrain_texture = "source/resources/terrain/";
 static std::string heightMapFile = "source/resources/terrain/heightmap_paris.png"; 
 
+static unsigned nbrPatchesTess = 100;
+
+
 class BaseTerrain:public PhysicsObject
 {
 public:
@@ -18,26 +21,31 @@ public:
 
 	virtual void UpdatePhysics(glm::vec3 gravity, float timeStep);
 
-	void Render(Shader& shader);
-
-//	void LoadFromFile(const char* filePath);
-//	float GetHeight(int x, int z) const { return m_heightMap.Get(x, z); }
-
 	inline void SetScale(const glm::vec3& newScale) { m_scale = newScale; }
 	inline glm::vec3 GetScale() const { return m_scale; }
 
+	void Render(Shader& shader);
+	void RenderTesselation(Shader& shader);
+
 	void InitTerrain();
-	void UpdateParamsForShaders();
+	std::vector<Vertex> InitVerticesWithHeightMapFromFile(const char* imagePath, unsigned int& width, unsigned int& height);
+
+	//Tesselation
+	void InitTerrainTesselation();
+	std::vector<Vertex> InitVerticesTessWithHeightMapTexture(const char* heightMapFilePath, unsigned int& width, unsigned int& height);
+
 	Texture LoadTerrainTextures(std::string name_texture, std::string pathFile_texture);
+
 	float GetHeightForPos(float x,float z);
 	float GetHeightInterpolated(float x, float z);
 	
 	glm::vec3 ConstrainCameraPosToTerrain(glm::vec3 camPos);
-	std::vector<Vertex> InitVerticesWithHeightMapFromFile(const char* imagePath, unsigned int& width, unsigned int& height);
+
 
 	void CalculateNormals(std::vector<Vertex>& Vertices, std::vector<unsigned int>& Indices);
 
 	void SetPosition(const glm::vec3& newPosition);
+
 
 	void ComputeBoundingBox();
 	void UpdateBoundingBox(glm::vec3 deltaPos);
@@ -45,14 +53,11 @@ public:
 	const BoundingBox& GetBoundingBox() const { return m_bbox; };
 
 private:
-	void LoadHeightMapFile(const char* pFilename);
-
-	int m_terrainSize = 0;
 	glm::vec3 m_scale = glm::vec3(1.0f);
 
-	Mesh* m_terrain = nullptr;
-	unsigned int m_width=0; //x-axis
-	unsigned int m_depth=0; //z-axis
+	unsigned int m_width = 0; //x-axis
+	unsigned int m_depth = 0; //z-axis
+	std::unique_ptr<Mesh> m_terrain = nullptr;
 
 	BoundingBox m_bbox;
 

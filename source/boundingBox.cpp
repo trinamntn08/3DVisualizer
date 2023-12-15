@@ -85,9 +85,9 @@ Mesh BoundingBox::toMesh()
         0, 1, 4,
         1, 5, 4
     };
-
+    std::vector<Texture> text;
     // Create a Mesh instance using the vertices and indices
-    return Mesh(vertices, indices, std::vector<Texture>());
+    return Mesh(vertices, indices, text);
 }
 
 void BoundingBox::Render(Shader& shader)

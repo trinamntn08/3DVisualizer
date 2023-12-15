@@ -1,4 +1,5 @@
 #include"pickingTexture.h"
+#define NOMINMAX
 #include<glad/glad.h>
 
 PickingTexture::~PickingTexture()

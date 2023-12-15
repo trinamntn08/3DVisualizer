@@ -1,3 +1,4 @@
+#define NOMINMAX
 #include "Box.h"
 #include "RigidBody.h"
 #include "Sphere.h"

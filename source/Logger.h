@@ -4,10 +4,12 @@
 #include <ctime>
 #include <iomanip>
 
-enum class LogLevel {
+#undef ERROR
+enum class LogLevel 
+{
     INFO,
     WARNING,
-    ERROR
+    ERROR,
 };
 
 class Log 

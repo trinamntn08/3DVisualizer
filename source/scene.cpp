@@ -30,15 +30,6 @@ Scene::~Scene()
     {
         delete item;
     }
-	if (m_skyBox)
-	{
-		delete m_skyBox;
-	}
-	if (m_skyDome)
-	{
-		delete m_skyDome;
-	}
-
 }
 
 void Scene::loadScene()
@@ -69,14 +60,14 @@ void Scene::loadScene()
 	
 	if (m_typeSky == Sky::SkyBox)
 	{
-		m_skyBox = new Skybox();
+		m_skyBox = std::make_unique<Skybox>();
 	}
 	else if (m_typeSky == Sky::SkyDome)
 	{
-		m_skyDome = new SkyDome();
+		m_skyDome = std::make_unique<SkyDome>();
 	}
 
-	m_terrain = new BaseTerrain();
+	m_terrain = std::make_unique<BaseTerrain>();
 	
 }
 void  Scene::ResetScene()
@@ -270,6 +261,11 @@ void Scene::RenderTerrain(Shader& shader_terrain)
 {
 	shader_terrain.activate();
 	m_terrain->Render(shader_terrain);
+}
+void Scene::RenderTerrainTesselation(Shader& shader_terrain)
+{
+	shader_terrain.activate();
+	m_terrain->RenderTesselation(shader_terrain);
 }
 /*********************************************************************************************************
 *                     COLLISIONS

@@ -1,3 +1,4 @@
+
 #include "Application.h"
 #include "Logger.h"
 #include <glm/gtc/matrix_transform.hpp> 
@@ -28,8 +29,8 @@ void Application::InitGraphicEnvironment()
 {    
     // glfw setting 
     glfwInit();
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 #ifdef __APPLE__
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
@@ -98,9 +99,10 @@ void Application::InitShader()
 
     m_shader_scene   = Shader("source/shaders/core_vertex.glsl", "source/shaders/core_fragment.glsl");
     m_shader_skyBox  = Shader("source/shaders/skybox_vertex.glsl", "source/shaders/skybox_fragment.glsl");
-    m_shader_terrain = Shader("source/shaders/terrain_vertex.glsl", "source/shaders/terrain_fragment.glsl");
+//    m_shader_terrain = Shader("source/shaders/terrain_vertex.glsl", "source/shaders/terrain_fragment.glsl");
     m_shader_skyDome = Shader("source/shaders/skydome_vertex.glsl", "source/shaders/skydome_fragment.glsl");
-
+    m_shader_terrain = Shader("source/shaders/gpuheight.vs", "source/shaders/gpuheight.glsl", nullptr,            // if wishing to render as is
+                        "source/shaders/gpuheight.tcs", "source/shaders/gpuheight.tes");
 }
 
 void Application::ConfigCamera()
@@ -124,6 +126,7 @@ void Application::Run()
     m_scene =std::make_unique<Scene>(Sky::SkyBox);
 
     // Configurate camera depending on the scene and type of cameraView
+    //Should be run after m_scene initialized
     ConfigCamera();
 
     // render loop
@@ -156,11 +159,10 @@ void Application::Run()
         glClearColor(0.08f, 0.16f, 0.18f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glFrontFace(GL_CW);
-        glCullFace(GL_BACK);
-    //    glEnable(GL_CULL_FACE);
+        glCullFace(GL_BACK); 
         glEnable(GL_DEPTH_TEST);
 
-        // Render scene
+    /************RENDER SCENE ***********/
        
         // enable shader befsore setting uniforms
         m_shader_scene.activate();
@@ -205,6 +207,7 @@ void Application::Run()
         /***********************/
          
         // Render terrain
+
         m_shader_terrain.activate();
 
         glm::mat4 model_terrain = glm::mat4(1.0f);
@@ -230,9 +233,10 @@ void Application::Run()
         glm::vec3 LightDir(sinf(angle) * radius, y, cosf(angle) * radius);
 
         glm::vec3 ReversedLightDir = -glm::normalize(LightDir);
-        m_shader_terrain.setVec3("gReversedLightDir", ReversedLightDir.x, ReversedLightDir.y, ReversedLightDir.z );
-        m_scene->RenderTerrain(m_shader_terrain);
-        /***********************/
+        //     glm::vec3 ReversedLightDir = -glm::vec3(0.0f, 1.0f, 0.0f);
+        m_shader_terrain.setVec3("gReversedLightDir", 0.0f, ReversedLightDir.y, ReversedLightDir.z );
+        m_scene->RenderTerrainTesselation(m_shader_terrain);
+    /*************************************/
          
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------

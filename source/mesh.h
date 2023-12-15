@@ -1,6 +1,7 @@
 #ifndef MESH_H
 #define MESH_H
 
+#define NOMINMAX
 #include <glad/glad.h> // holds all OpenGL type declarations
 
 #include <glm/glm.hpp>
@@ -17,7 +18,7 @@ using namespace std;
 struct Vertex 
 {
     glm::vec3 Position;
-    glm::vec3 Normal;
+    glm::vec3 Normal=glm::vec3(0.0f,1.0f,0.0f);
     glm::vec2 TexCoords;
     glm::vec3 Tangent;
     glm::vec3 Bitangent;
@@ -42,17 +43,20 @@ public:
     std::vector<Texture>      textures;
     unsigned int VAO;
     Mesh();
-    Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<Texture> textures);
+    Mesh(std::vector<Vertex>& vertices, std::vector<unsigned int>& indices, std::vector<Texture>& textures);
     
     // For Skydome
-    Mesh(std::vector<Vertex> vertices, std::vector<Texture> textures);
+    Mesh(std::vector<Vertex>& vertices, std::vector<Texture>& textures);
+
+    // For terrain tesselation
+    Mesh(std::vector<Vertex>& vertices, std::vector<Texture>& textures, int val);
 
     ~Mesh();
 
     void Render(Shader& shader);
     void RenderSkyDome(Shader& shader);
 
-
+    void RenderTesselation(Shader& shader);
 private:
     // render data 
     unsigned int VBO, EBO;

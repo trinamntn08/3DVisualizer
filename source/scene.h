@@ -4,6 +4,7 @@
 #include"SkyBox.h"
 #include"Terrain.h"
 #include"SkyDome.h"
+#include<memory>
 
 const std::string cubePath = std::string("source/resources/cube/cube.gltf");
 const std::string spiderPath = std::string("source/resources/spider/spider.obj");
@@ -54,13 +55,15 @@ public:
     void RenderSkyDome(Shader& shader_skydome);
     void RenderTerrain(Shader& shader_terrain);
 
+    void RenderTerrainTesselation(Shader& shader_terrain);
+
     void ResetScene();
     void ClearScene();
 
 
-    inline BaseTerrain* getTerrain() { return m_terrain; };
-    inline SkyDome* getSkyDome() { return m_skyDome; };
-    inline Skybox* getSkyBox() { return m_skyBox; };
+    inline std::unique_ptr <BaseTerrain>& getTerrain() { return m_terrain; };
+    inline std::unique_ptr <SkyDome>& getSkyDome() { return m_skyDome; };
+    inline std::unique_ptr <Skybox>& getSkyBox() { return m_skyBox; };
 
     /**************     COLLISIONS  ****************/
     void checkCollisions();
@@ -88,10 +91,10 @@ private:
     std::vector<BoxModel*> m_grounds;
     BoundingBox m_sceneBounds;
 
-    Skybox* m_skyBox=nullptr;
-    SkyDome* m_skyDome = nullptr;
+    std::unique_ptr<Skybox> m_skyBox=nullptr;
+    std::unique_ptr<SkyDome> m_skyDome = nullptr;
 
-    BaseTerrain* m_terrain = nullptr;
+    std::unique_ptr<BaseTerrain> m_terrain = nullptr;
 
 
     glm::vec3 m_gravity = glm::vec3(0.f,-3.0f,0.0f);

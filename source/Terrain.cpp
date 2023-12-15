@@ -6,16 +6,13 @@
 BaseTerrain::BaseTerrain(glm::vec3 scale):m_scale(scale)
 { 
 	m_rigidbody = new RigidBody();
-	InitTerrain(); 
+//	InitTerrain(); 
+	InitTerrainTesselation();
 	ComputeBoundingBox();
 }
 
 BaseTerrain::~BaseTerrain()
 {
-	if (m_terrain)
-	{
-		delete m_terrain;
-	}
 }
 
 void BaseTerrain::UpdatePhysics(glm::vec3 gravity, float timeStep)
@@ -30,27 +27,13 @@ void BaseTerrain::Render(Shader& shader)
 	m_terrain->Render(shader);
 }
 
-void BaseTerrain::LoadHeightMapFile(const char* filePath)
+void BaseTerrain::RenderTesselation(Shader& shader)
 {
-    //int FileSize = 0;
-    //unsigned char* p = (unsigned char*)ReadBinaryFile(pFilename, FileSize);
-
-    //if (FileSize % sizeof(float) != 0) {
-    //    printf("%s:%d - '%s' does not contain an whole number of floats (size %d)\n", __FILE__, __LINE__, pFilename, FileSize);
-    //    exit(0);
-    //}
-
-    //m_terrainSize = (int)sqrtf((float)FileSize / (float)sizeof(float));
-
-    //printf("Terrain size %d\n", m_terrainSize);
-
-    //if ((m_terrainSize * m_terrainSize) != (FileSize / sizeof(float))) {
-    //    printf("%s:%d - '%s' does not contain a square height map - size %d\n", __FILE__, __LINE__, pFilename, FileSize);
-    //    exit(0);
-    //}
-
-    //m_heightMap.InitArray2D(m_terrainSize, m_terrainSize, (float*)p);
+	shader.activate();
+	m_terrain->RenderTesselation(shader);
 }
+
+
 
 void BaseTerrain::InitTerrain()
 {
@@ -117,14 +100,28 @@ void BaseTerrain::InitTerrain()
 	//textures_terrain.push_back(terrainTexture);
 //	textures_terrain.push_back(SamplerTerrain);
 
-	m_terrain = new Mesh(vertices, indices, textures_terrain);
+	m_terrain = std::make_unique<Mesh>(vertices, indices, textures_terrain);
 }
-void BaseTerrain::UpdateParamsForShaders()
+void BaseTerrain::InitTerrainTesselation()
 {
-	static float Height0 = 64.0f;
-	static float Height1 = 128.0f;
-	static float Height2 = 192.0f;
-	static float Height3 = 256.0f;
+	// Initialize vertices
+	std::vector<Vertex> vertices = InitVerticesTessWithHeightMapTexture(heightMapFile.c_str(), m_width, m_depth);
+
+	// textures
+	std::vector<Texture> textures_terrain;
+
+	Texture sand = LoadTerrainTextures("gTextureHeight0", path_terrain_texture + "rdiffuse.jpg");
+	Texture grass = LoadTerrainTextures("gTextureHeight1", path_terrain_texture + "sand.jpg");
+	Texture rdiffuse = LoadTerrainTextures("gTextureHeight2", path_terrain_texture + "snow.jpg");
+	Texture snow = LoadTerrainTextures("gTextureHeight3", path_terrain_texture + "terrainTexture.jpg");
+	Texture heightMap = LoadTerrainTextures("heightMap", path_terrain_texture+ "heightmap_paris.png");
+	textures_terrain.push_back(sand);
+	textures_terrain.push_back(grass);
+	textures_terrain.push_back(rdiffuse);
+	textures_terrain.push_back(snow);
+	textures_terrain.push_back(heightMap);
+
+	m_terrain = std::make_unique<Mesh>(vertices, textures_terrain,1);
 }
 
 Texture BaseTerrain::LoadTerrainTextures(std::string name_texture,std::string pathFile_texture)
@@ -220,7 +217,7 @@ std::vector<Vertex> BaseTerrain::InitVerticesWithHeightMapFromFile(const char* i
 		return {};
 	}
 	
-	static float yScale = 170.0f / 256.0f, yShift = 10.0f;  // apply a scale+shift to the height data
+	static float yScale = 64.0f / 256.0f, yShift = 10.0f;  // apply a scale+shift to the height data
 	
 	if (nChannels == 1 || nChannels == 3 || nChannels == 4) //RGB || RGBA
 	{
@@ -237,17 +234,13 @@ std::vector<Vertex> BaseTerrain::InitVerticesWithHeightMapFromFile(const char* i
 				float x = -(int)height / 2.0f + i;
 				float z = -(int)width / 2.0f + j;
 				float y = (int)h * yScale - yShift;
+				//	float y = 1.0f;
 				Vertex vertex;
 				vertex.Position = glm::vec3(x, y, z);
 				//    vertex.Position = glm::vec3(x, 1.0f, z);
+				
 				//Normals will be computed later
-				
-				float x_n = 0.0;
-				float y_n = 1.0;
-				float z_n = 0.0;
-				vertex.Normal = glm::vec3(x_n, y_n, z_n);
-				
-
+		
 				// Add texture coordinates
 				float u = (float)j / (width - 1);
 				float v = 1.0 - (float)i / (height - 1);
@@ -263,6 +256,64 @@ std::vector<Vertex> BaseTerrain::InitVerticesWithHeightMapFromFile(const char* i
 	stbi_image_free(data);
 	return vertices;
 }
+std::vector<Vertex> BaseTerrain::InitVerticesTessWithHeightMapTexture(const char* heightMapFilePath, 
+																	  unsigned int& width, unsigned int& height)
+{
+	std::vector<Vertex> vertices;
+	
+	// Height is loaded from heightmap texture
+	// For now, set y=0.f 
+	for (unsigned int i = 0; i <= nbrPatchesTess - 1; i++)
+	{
+		for (unsigned int j = 0; j <= nbrPatchesTess - 1; j++)
+		{
+			Vertex vertex1;
+			float x1 = (-(int)width / 2.0f + (int)width * i / (float)nbrPatchesTess); // v.x
+			float y1 = (0.0f); // v.y 
+			float z1 = (-(int)height / 2.0f + height * j / (float)nbrPatchesTess); // v.z
+			float u1 = (i / (float)nbrPatchesTess); // u
+			float v1 = (j / (float)nbrPatchesTess); // v
+			vertex1.Position = glm::vec3(x1, y1, z1);
+			vertex1.TexCoords = glm::vec2(u1, v1);
+			vertices.push_back(vertex1);
+
+			Vertex vertex2;
+			float x2 = (-(int)width / 2.0f + width * (i + 1) / (float)nbrPatchesTess); // v.x
+			float y2 = (0.0f); // v.y
+			float z2 = (-(int)height / 2.0f + height * j / (float)nbrPatchesTess); // v.z
+			float u2 = ((i + 1) / (float)nbrPatchesTess); // u
+			float v2 = (j / (float)nbrPatchesTess); // v
+			vertex2.Position = glm::vec3(x2, y2, z2);
+			vertex2.TexCoords = glm::vec2(u2, v2);
+			vertices.push_back(vertex2);
+
+			Vertex vertex3;
+			float x3 = (-(int)width / 2.0f + width * (i ) / (float)nbrPatchesTess); // v.x
+			float y3 = (0.0f); // v.y
+			float z3 = (-(int)height / 2.0f + height * (j+1) / (float)nbrPatchesTess); // v.z
+			float u3 = (i / (float)nbrPatchesTess); // u
+			float v3 = ((j+1) / (float)nbrPatchesTess); // v
+			vertex3.Position = glm::vec3(x3, y3, z3);
+			vertex3.TexCoords = glm::vec2(u3, v3);
+			vertices.push_back(vertex3);
+
+			Vertex vertex4;
+			float x4 = (-(int)width / 2.0f + width * (i+1) / (float)nbrPatchesTess); // v.x
+			float y4 = (0.0f); // v.y
+			float z4 = (-(int)height / 2.0f + height * (j + 1) / (float)nbrPatchesTess); // v.z
+			float u4 = ((i+1) / (float)nbrPatchesTess); // u
+			float v4 = ((j + 1) / (float)nbrPatchesTess); // v
+			vertex4.Position = glm::vec3(x4, y4, z4);
+			vertex4.TexCoords = glm::vec2(u4, v4);
+			vertices.push_back(vertex4);
+		}
+	}
+	std::cout << "Loaded " << nbrPatchesTess * nbrPatchesTess << " patches of 4 control points each" << std::endl;
+	std::cout << "Processing " << nbrPatchesTess * nbrPatchesTess * 4 << " vertices in vertex shader" << std::endl;
+
+	return vertices;
+}
+
 void BaseTerrain::CalculateNormals(std::vector<Vertex>& Vertices, std::vector<unsigned int>& Indices)
 {
 	unsigned int Index = 0;
@@ -335,12 +386,12 @@ void BaseTerrain::UpdateBoundingBox(glm::vec3 deltaPos)
 
 float BaseTerrain::GetHeightForPos(float x, float z)
 {
-	float pos_x = x / 1.0f;
-	float pos_z = z / 1.0f;
+	float pos_x = x ;
+	float pos_z = z ;
 
 	// Apply the same translation as in the heightmap creation code
-	pos_x += (int)m_heightMap.size() / 2.0f;
-	pos_z += (int)m_heightMap[0].size() / 2.0f;
+	pos_x += ((int)m_heightMap.size()  / 2.0f);
+	pos_z += ((int)m_heightMap[0].size() / 2.0f);
 
 	return GetHeightInterpolated(pos_x, pos_z);
 }
@@ -380,12 +431,12 @@ glm::vec3 BaseTerrain::ConstrainCameraPosToTerrain(glm::vec3 camPos)
 	// Constrain to the bounding box
 	if (camPos.x < m_bbox.GetMinBounds().x)
 	{
-		newCameraPos.x = m_bbox.GetMinBounds().x - 1.0f;
+		newCameraPos.x = m_bbox.GetMinBounds().x + 1.0f;
 	}
 
 	if (camPos.z < m_bbox.GetMinBounds().z) 
 	{
-		newCameraPos.z = m_bbox.GetMinBounds().z - 1.0f;
+		newCameraPos.z = m_bbox.GetMinBounds().z + 1.0f;
 	}
 
 	if (camPos.x > m_bbox.GetMaxBounds().x) 
@@ -397,7 +448,7 @@ glm::vec3 BaseTerrain::ConstrainCameraPosToTerrain(glm::vec3 camPos)
 		newCameraPos.z = m_bbox.GetMaxBounds().z-1.0f;
 	}
 
-	newCameraPos.y = GetHeightForPos(newCameraPos.x / m_scale.x, newCameraPos.z / m_scale.z);
+	newCameraPos.y = GetHeightForPos(newCameraPos.x , newCameraPos.z );
 	// Add an offset to simulate walking height
 	static float walkingHeightOffset = 20.0f;
 	newCameraPos.y += walkingHeightOffset;

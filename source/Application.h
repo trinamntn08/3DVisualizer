@@ -15,6 +15,7 @@
 #include"mousePicker.h" // Not used yet
 #include"traceRay.h"
 #include<memory>
+#include"ShadersManager.h"
 
 struct AppSpecification
 {
@@ -60,12 +61,7 @@ private:
 	float m_frameTime = 0.0f; // For Camera
 	float m_lastFrameTime = 0.f;
 
-	//Shaders
-	Shader m_shader_scene;
-	Shader m_shader_skyBox;
-	Shader m_shader_skyDome;
-	Shader m_shader_terrain;
-	Shader m_shader_plane;
+	ShadersManager m_shadersManager;
 
 	std::unique_ptr<Camera> m_camera;
 	std::unique_ptr<Scene> m_scene;

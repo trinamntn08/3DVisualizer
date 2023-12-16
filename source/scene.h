@@ -7,6 +7,8 @@
 #include"Terrain.h"
 #include"SkyDome.h"
 #include<memory>
+#include"camera.h"
+#include"ShadersManager.h"
 
 const std::string cubePath = std::string("source/resources/cube/cube.gltf");
 const std::string spiderPath = std::string("source/resources/spider/spider.obj");
@@ -51,14 +53,13 @@ public:
     inline Sky typeSky() { return m_typeSky; };
 
 
-    void Render();
-    void RenderPhysicsObjects(Shader & shader, bool isRender_BBoxes = false);
-    void RenderSkyBox(Shader& shader_skyBox);
-    void RenderSkyDome(Shader& shader_skydome);
-    void RenderTerrain(Shader& shader_terrain);
-    void RenderPlane(Shader& shader_plane);
-
-    void RenderTerrainTesselation(Shader& shader_terrain);
+    void Render(ShadersManager& shadersManager, const std::unique_ptr<Camera>& camera);
+    void RenderPhysicsObjects(Shader & shader,const std::unique_ptr<Camera>& camera, bool isRender_BBoxes = false);
+    void RenderSkyBox(Shader& shader_skyBox, const std::unique_ptr<Camera>& camera);
+    void RenderSkyDome(Shader& shader_skydome, const std::unique_ptr<Camera>& camera);
+    void RenderPlane(Shader& shader_plane,const std::unique_ptr<Camera>& camera);
+    void RenderTerrain(Shader& shader_terrain, const std::unique_ptr<Camera>& camera);
+    void RenderTerrainTesselation(Shader& shader_terrain, const std::unique_ptr<Camera>& camera);
 
     void ResetScene();
     void ClearScene();
@@ -89,21 +90,18 @@ public:
     PhysicsProperties m_properties;
 
 
-
 private:
     Sky m_typeSky = Sky::SkyDome;
+
+    std::unique_ptr<Skybox> m_skyBox=nullptr;
+    std::unique_ptr<SkyDome> m_skyDome = nullptr;
+    std::unique_ptr<BaseTerrain> m_terrain = nullptr;
+    std::unique_ptr <PlaneModel> m_plane = nullptr;
 
     std::vector<PhysicsObject*> m_allPhysicsObjects;
     std::vector<BoxModel*> m_grounds;
     BoundingBox m_sceneBounds;
 
-    std::unique_ptr<Skybox> m_skyBox=nullptr;
-    std::unique_ptr<SkyDome> m_skyDome = nullptr;
-
-    std::unique_ptr<BaseTerrain> m_terrain = nullptr;
-
-
     glm::vec3 m_gravity = glm::vec3(0.f,-3.0f,0.0f);
 
-    std::unique_ptr <PlaneModel> m_plane = nullptr;
 };

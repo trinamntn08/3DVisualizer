@@ -210,13 +210,35 @@ void Scene::CalculateSceneBounds()
 	}
 }
 
-void Scene::Render()
+void Scene::Render(ShadersManager& shadersManager, const std::unique_ptr<Camera>& camera)
 {
+	glClearColor(0.08f, 0.16f, 0.18f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glFrontFace(GL_CW);
+	glCullFace(GL_BACK);
+	glEnable(GL_DEPTH_TEST);
 
+	RenderPhysicsObjects(shadersManager.scene,camera);
+
+	if (m_typeSky == Sky::SkyBox)
+	{
+		RenderSkyBox(shadersManager.skyBox, camera);
+	}
+	else if(m_typeSky == Sky::SkyDome)
+	{
+		RenderSkyDome(shadersManager.skyDome, camera);
+	}
+
+	RenderPlane(shadersManager.plane, camera);
+	RenderTerrainTesselation(shadersManager.terrain, camera);
 }
-void Scene::RenderPhysicsObjects(Shader& shader, bool isRender_BBoxes)
+void Scene::RenderPhysicsObjects(Shader& shader,const std::unique_ptr<Camera>& camera, bool isRender_BBoxes)
 {
-    shader.activate();
+	shader.activate();
+	glm::mat4 model = glm::mat4(1.0f);
+	glm::mat4 view = camera->GetViewMatrix();
+	glm::mat4 projection = camera->GetProjectionMatrix();
+	shader.setMat_MVP(model, view, projection);
 
 	for (BoxModel* cube : m_grounds)
 	{
@@ -249,29 +271,80 @@ void Scene::RenderPhysicsObjects(Shader& shader, bool isRender_BBoxes)
 		bbox_terrain.Render(shader);
     }
 }
-void Scene::RenderSkyBox(Shader& shader_skybox)
+void Scene::RenderSkyBox(Shader& shader_skybox, const std::unique_ptr<Camera>& camera)
 {
+	glDepthFunc(GL_LEQUAL);
+	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 	shader_skybox.activate();
+	glm::mat4 model_skyBox = glm::mat4(1.0f);
+	glm::mat4 view_skyBox = camera->GetViewMatrix();
+	glm::mat4 projection_skyBox = camera->GetProjectionMatrix();
+	shader_skybox.setMat_MVP(model_skyBox, view_skyBox, projection_skyBox);
 	m_skyBox->Render(shader_skybox);
+
+	glDepthFunc(GL_LESS);
 }
-void Scene::RenderSkyDome(Shader& shader_skydome)
+void Scene::RenderSkyDome(Shader& shader_skydome, const std::unique_ptr<Camera>& camera)
 {
+	glDepthFunc(GL_LEQUAL);
 	shader_skydome.activate();
+
+	glm::mat4 model_skyDome = glm::mat4(1.0f);
+	glm::mat4 view_skyDome = camera->GetViewMatrix();
+	glm::mat4 projection_skyDome = camera->GetProjectionMatrix();
+	shader_skydome.setMat_MVP(model_skyDome, view_skyDome, projection_skyDome);
+
 	m_skyDome->Render(shader_skydome);
+	glDepthFunc(GL_LESS);
 }
-void Scene::RenderTerrain(Shader& shader_terrain)
+void Scene::RenderTerrain(Shader& shader_terrain, const std::unique_ptr<Camera>& camera)
 {
 	shader_terrain.activate();
 	m_terrain->Render(shader_terrain);
 }
-void Scene::RenderPlane(Shader& shader_plane)
+void Scene::RenderPlane(Shader& shader_plane,const std::unique_ptr<Camera>& camera)
 {
 	shader_plane.activate();
+	// lighting info
+	static glm::vec3 lightPos(0.0f, 100.0f, 0.0f);
+	shader_plane.setVec3("lightPos", lightPos);
+	shader_plane.setInt("blinn", true);
+
+	glm::mat4 model_plane = glm::mat4(1.0f);
+	glm::mat4 view_plane = camera->GetViewMatrix();
+	glm::mat4 projection_plane = camera->GetProjectionMatrix();
+	shader_plane.setMat_MVP(model_plane, view_plane, projection_plane);
 	m_plane->Render(shader_plane);
 }
-void Scene::RenderTerrainTesselation(Shader& shader_terrain)
+void Scene::RenderTerrainTesselation(Shader& shader_terrain, const std::unique_ptr<Camera>& camera)
 {
 	shader_terrain.activate();
+	glm::mat4 model_terrain = glm::mat4(1.0f);
+	model_terrain = glm::scale(model_terrain, this->getTerrain()->GetScale());
+	glm::mat4 view_terrain = camera->GetViewMatrix();
+	glm::mat4 projection_terrain = camera->GetProjectionMatrix();
+	shader_terrain.setMat_MVP(model_terrain, view_terrain, projection_terrain);
+	
+	// Change light over time
+	//static float angle = 0.0f;
+	//angle += 0.003f;
+	//if (angle > 2.0f * 3.1415926f)
+	//{
+	//    angle = 0.0f;
+	//}
+
+	//// Simulate sun's path
+	//float radius = 10.0f; // Can adjust based on desired orbit size
+	//float sunHeightMax = 10.0f; // Maximum height of the sun
+	//float sunHeightMin = -10.0f; // Minimum height of the sun (can be negative if you want the sun to go below the horizon)
+	//float y = sunHeightMin + (sunHeightMax - sunHeightMin) * 0.5f * (1 + sinf(angle - 3.1415926 / 2.0f));
+	//// Calculate sun position
+	//glm::vec3 LightDir(sinf(angle) * radius, y, cosf(angle) * radius);
+
+	//glm::vec3 ReversedLightDir = -glm::normalize(LightDir);
+	////     glm::vec3 ReversedLightDir = -glm::vec3(0.0f, 1.0f, 0.0f);
+	//m_shader_terrain.setVec3("gReversedLightDir", 0.0f, ReversedLightDir.y, ReversedLightDir.z );
+
 	m_terrain->RenderTesselation(shader_terrain);
 }
 /*********************************************************************************************************

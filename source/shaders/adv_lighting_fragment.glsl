@@ -15,7 +15,7 @@ uniform bool blinn;
 void main()
 {           
     vec3 color = texture(wood, fs_in.TexCoords).rgb;
- //   FragColor = vec4(color, 1.0);
+
     // ambient
     vec3 ambient = 0.05 * color;
     // diffuse

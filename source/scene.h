@@ -1,6 +1,8 @@
 #pragma once
 
 #include"PhysicsEngine/Box.h"
+#include"PhysicsEngine/Plane.h"
+
 #include"SkyBox.h"
 #include"Terrain.h"
 #include"SkyDome.h"
@@ -54,6 +56,7 @@ public:
     void RenderSkyBox(Shader& shader_skyBox);
     void RenderSkyDome(Shader& shader_skydome);
     void RenderTerrain(Shader& shader_terrain);
+    void RenderPlane(Shader& shader_plane);
 
     void RenderTerrainTesselation(Shader& shader_terrain);
 
@@ -64,6 +67,7 @@ public:
     inline std::unique_ptr <BaseTerrain>& getTerrain() { return m_terrain; };
     inline std::unique_ptr <SkyDome>& getSkyDome() { return m_skyDome; };
     inline std::unique_ptr <Skybox>& getSkyBox() { return m_skyBox; };
+    inline std::unique_ptr <PlaneModel>& getPlane() { return m_plane; }
 
     /**************     COLLISIONS  ****************/
     void checkCollisions();
@@ -84,6 +88,8 @@ public:
     // scene properties
     PhysicsProperties m_properties;
 
+
+
 private:
     Sky m_typeSky = Sky::SkyDome;
 
@@ -98,4 +104,6 @@ private:
 
 
     glm::vec3 m_gravity = glm::vec3(0.f,-3.0f,0.0f);
+
+    std::unique_ptr <PlaneModel> m_plane = nullptr;
 };

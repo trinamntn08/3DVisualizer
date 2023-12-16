@@ -15,7 +15,7 @@ Application* CreateApplication()
 Application::Application(const AppSpecification& appSpec):
                         m_spec(appSpec), 
                         m_camera(std::make_unique<Camera>(TypeCameraView::ThirdPerson, 
-                                                            45.0f, 0.1f, 50000.0f))
+                                                            45.0f, 0.1f, 10000.0f))
 {
     InitGraphicEnvironment();
     InitShader();
@@ -103,6 +103,9 @@ void Application::InitShader()
     m_shader_skyDome = Shader("source/shaders/skydome_vertex.glsl", "source/shaders/skydome_fragment.glsl");
     m_shader_terrain = Shader("source/shaders/gpuheight.vs", "source/shaders/gpuheight.glsl", nullptr,            // if wishing to render as is
                         "source/shaders/gpuheight.tcs", "source/shaders/gpuheight.tes");
+
+    m_shader_plane = Shader("source/shaders/adv_lighting_vertex.glsl", "source/shaders/adv_lighting_fragment.glsl");
+
 }
 
 void Application::ConfigCamera()
@@ -115,7 +118,7 @@ void Application::ConfigCamera()
     }
     else if (m_camera->m_typeView == TypeCameraView::ThirdPerson)
     {
-        m_camera->LookAtBoundingBox(m_scene->getTerrain()->GetBoundingBox());
+          m_camera->LookAtBoundingBox(m_scene->getTerrain()->GetBoundingBox());
     }
     
 }
@@ -124,10 +127,10 @@ void Application::Run()
 {
     m_running = true;
     m_scene =std::make_unique<Scene>(Sky::SkyBox);
-
-    // Configurate camera depending on the scene and type of cameraView
-    //Should be run after m_scene initialized
     ConfigCamera();
+
+    // lighting info
+    glm::vec3 lightPos(0.0f, 100.0f, 0.0f);
 
     // render loop
     while (!glfwWindowShouldClose(m_window))
@@ -167,15 +170,25 @@ void Application::Run()
         // enable shader befsore setting uniforms
         m_shader_scene.activate();
 
-        // Render Scene's Objects
+        //// Render Scene's Objects
         glm::mat4 model = glm::mat4(1.0f);
         glm::mat4 view = m_camera->GetViewMatrix();
         glm::mat4 projection = m_camera->GetProjectionMatrix();
         m_shader_scene.setMat_MVP(model, view, projection);
-
         m_scene->RenderPhysicsObjects(m_shader_scene, false);
         /***********************/
-         
+
+        m_shader_plane.activate();
+        m_shader_plane.setVec3("lightPos", lightPos);
+        m_shader_plane.setInt("blinn", true);
+
+        glm::mat4 model_plane = glm::mat4(1.0f);
+        glm::mat4 view_plane = m_camera->GetViewMatrix();
+        glm::mat4 projection_plane = m_camera->GetProjectionMatrix();
+        m_shader_plane.setMat_MVP(model_plane, view_plane, projection_plane);
+        m_scene->RenderPlane(m_shader_plane);
+        /***********************/
+
         // Render skyBox
         if (m_scene->typeSky() == Sky::SkyBox)
         {
@@ -207,34 +220,31 @@ void Application::Run()
         /***********************/
          
         // Render terrain
-
         m_shader_terrain.activate();
-
         glm::mat4 model_terrain = glm::mat4(1.0f);
-        // Apply the scaling transformation
         model_terrain = glm::scale(model_terrain, m_scene->getTerrain()->GetScale());
         glm::mat4 view_terrain = m_camera->GetViewMatrix();
         glm::mat4 projection_terrain = m_camera->GetProjectionMatrix();
         m_shader_terrain.setMat_MVP(model_terrain, view_terrain, projection_terrain);
-        // Change light over time
-        static float angle = 0.0f;
-        angle += 0.003f;
-        if (angle > 2.0f * 3.1415926f)
-        {
-            angle = 0.0f;
-        }
+        //// Change light over time
+        //static float angle = 0.0f;
+        //angle += 0.003f;
+        //if (angle > 2.0f * 3.1415926f)
+        //{
+        //    angle = 0.0f;
+        //}
 
-        // Simulate sun's path
-        float radius = 10.0f; // Can adjust based on desired orbit size
-        float sunHeightMax = 10.0f; // Maximum height of the sun
-        float sunHeightMin = -10.0f; // Minimum height of the sun (can be negative if you want the sun to go below the horizon)
-        float y = sunHeightMin + (sunHeightMax - sunHeightMin) * 0.5f * (1 + sinf(angle - 3.1415926 / 2.0f));
-        // Calculate sun position
-        glm::vec3 LightDir(sinf(angle) * radius, y, cosf(angle) * radius);
+        //// Simulate sun's path
+        //float radius = 10.0f; // Can adjust based on desired orbit size
+        //float sunHeightMax = 10.0f; // Maximum height of the sun
+        //float sunHeightMin = -10.0f; // Minimum height of the sun (can be negative if you want the sun to go below the horizon)
+        //float y = sunHeightMin + (sunHeightMax - sunHeightMin) * 0.5f * (1 + sinf(angle - 3.1415926 / 2.0f));
+        //// Calculate sun position
+        //glm::vec3 LightDir(sinf(angle) * radius, y, cosf(angle) * radius);
 
-        glm::vec3 ReversedLightDir = -glm::normalize(LightDir);
-        //     glm::vec3 ReversedLightDir = -glm::vec3(0.0f, 1.0f, 0.0f);
-        m_shader_terrain.setVec3("gReversedLightDir", 0.0f, ReversedLightDir.y, ReversedLightDir.z );
+        //glm::vec3 ReversedLightDir = -glm::normalize(LightDir);
+        ////     glm::vec3 ReversedLightDir = -glm::vec3(0.0f, 1.0f, 0.0f);
+        //m_shader_terrain.setVec3("gReversedLightDir", 0.0f, ReversedLightDir.y, ReversedLightDir.z );
         m_scene->RenderTerrainTesselation(m_shader_terrain);
     /*************************************/
          

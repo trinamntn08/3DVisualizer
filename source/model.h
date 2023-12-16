@@ -20,7 +20,7 @@
 #include <map>
 #include <vector>
 
-static unsigned int TextureFromFile(const char* path, const std::string& directory, bool gamma=true);
+extern unsigned int LoadTextureFromFile(const char* path, const std::string& directory, bool gamma=true);
 
 class Model 
 {

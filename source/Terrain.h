@@ -9,7 +9,7 @@ class Shader;
 static std::string path_terrain_texture = "source/resources/terrain/";
 static std::string heightMapFile = "source/resources/terrain/heightmap_paris.png"; 
 
-static unsigned nbrPatchesTess = 100;
+extern unsigned int nbrPatchesTess ;
 
 
 class BaseTerrain:public PhysicsObject

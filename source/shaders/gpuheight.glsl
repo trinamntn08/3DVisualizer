@@ -59,7 +59,7 @@ vec4 CalcTexColor()
 void main()
 {
     float c = (Height + 16)/64.0f;
-//    FragColor = vec4(h, h, h, 1.0);
+ //   FragColor = vec4(Height, Height, Height, 1.0);
 
     vec4 TexColor = CalcTexColor();
     vec3 Normal_ = normalize(Normal.xyz);
@@ -67,4 +67,5 @@ void main()
     Diffuse = max(0.3f, Diffuse);
     vec4 Color = vec4(c, c, c, 1.0);
     FragColor = Color * 12.0f* TexColor * Diffuse;
+
 }

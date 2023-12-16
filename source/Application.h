@@ -65,6 +65,7 @@ private:
 	Shader m_shader_skyBox;
 	Shader m_shader_skyDome;
 	Shader m_shader_terrain;
+	Shader m_shader_plane;
 
 	std::unique_ptr<Camera> m_camera;
 	std::unique_ptr<Scene> m_scene;

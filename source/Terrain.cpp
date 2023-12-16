@@ -2,11 +2,13 @@
 #include"stb_image.h"
 #include"Logger.h"
 #include"PhysicsEngine/RigidBody.h"
+#include"Logger.h"
+
+unsigned int nbrPatchesTess = 50;
 
 BaseTerrain::BaseTerrain(glm::vec3 scale):m_scale(scale)
 { 
 	m_rigidbody = new RigidBody();
-//	InitTerrain(); 
 	InitTerrainTesselation();
 	ComputeBoundingBox();
 }
@@ -32,8 +34,6 @@ void BaseTerrain::RenderTesselation(Shader& shader)
 	shader.activate();
 	m_terrain->RenderTesselation(shader);
 }
-
-
 
 void BaseTerrain::InitTerrain()
 {
@@ -259,6 +259,17 @@ std::vector<Vertex> BaseTerrain::InitVerticesWithHeightMapFromFile(const char* i
 std::vector<Vertex> BaseTerrain::InitVerticesTessWithHeightMapTexture(const char* heightMapFilePath, 
 																	  unsigned int& width, unsigned int& height)
 {
+	int pwidth, pheight, nbrComponents;
+	unsigned char* data = stbi_load(heightMapFilePath, &pwidth, &pheight, &nbrComponents, 0);
+	if (data)
+	{
+		width = pwidth;
+		height = pheight;
+	}
+	else
+	{
+		Log::error("Can not read heightMap file");
+	}
 	std::vector<Vertex> vertices;
 	
 	// Height is loaded from heightmap texture

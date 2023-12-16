@@ -42,27 +42,31 @@ public:
     std::vector<unsigned int> indices;
     std::vector<Texture>      textures;
     unsigned int VAO;
+    //Empty
     Mesh();
-    Mesh(std::vector<Vertex>& vertices, std::vector<unsigned int>& indices, std::vector<Texture>& textures);
-    
-    // For Skydome
-    Mesh(std::vector<Vertex>& vertices, std::vector<Texture>& textures);
+    //
+    Mesh(std::vector<Vertex>& vertices,
+        std::vector<unsigned int>& indices,
+        std::vector<Texture>& textures);
 
-    // For terrain tesselation
-    Mesh(std::vector<Vertex>& vertices, std::vector<Texture>& textures, int val);
+    Mesh(std::vector<Vertex>& vertices, 
+        std::vector<Texture>& textures);
+
+    // Terrain tesselation
+    Mesh(std::vector<Vertex>& vertices, 
+        std::vector<Texture>& textures, 
+        int val);
 
     ~Mesh();
 
     void Render(Shader& shader);
     void RenderSkyDome(Shader& shader);
-
     void RenderTesselation(Shader& shader);
 private:
     // render data 
     unsigned int VBO, EBO;
 
-    // initializes all the buffer objects/arrays
     void setupMesh();
-    void setupMeshWithoutIndices();
+  //  void setupMeshWithoutIndices();
 };
 #endif

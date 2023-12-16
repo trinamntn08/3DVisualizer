@@ -57,6 +57,8 @@ void Scene::loadScene()
 	ball2->SetCurrentPosAsOriginalPos();
 	ball3->SetCurrentPosAsOriginalPos();
 	*/
+
+	m_plane = std::make_unique <PlaneModel>();
 	
 	if (m_typeSky == Sky::SkyBox)
 	{
@@ -261,6 +263,11 @@ void Scene::RenderTerrain(Shader& shader_terrain)
 {
 	shader_terrain.activate();
 	m_terrain->Render(shader_terrain);
+}
+void Scene::RenderPlane(Shader& shader_plane)
+{
+	shader_plane.activate();
+	m_plane->Render(shader_plane);
 }
 void Scene::RenderTerrainTesselation(Shader& shader_terrain)
 {

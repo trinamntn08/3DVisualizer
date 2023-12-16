@@ -45,10 +45,10 @@ void PlaneModel::init()
     std::vector<Vertex> vertices;
     glm::vec3 vertexPositions[4] =
     {
-      glm::vec3( 10.0f, -0.5f, 10.0f),
-      glm::vec3(-10.0f, -0.5f, 10.0f),
-      glm::vec3(-10.0f, -0.5f, -10.0f),
-      glm::vec3( 10.0f, -0.5f, -10.0f),
+      glm::vec3( 100.0f, 10.0f, 100.0f),
+      glm::vec3(-100.0f, 10.0f, 100.0f),
+      glm::vec3(-100.0f, 10.0f, -100.0f),
+      glm::vec3( 100.0f, 10.0f, -100.0f),
     };
 
     glm::vec3 vertexNormals[4] =
@@ -61,10 +61,10 @@ void PlaneModel::init()
 
     glm::vec2 vertexTexCoords[4] =
     {
-      glm::vec2(10.0f, 0.0f),
+      glm::vec2(100.0f, 0.0f),
       glm::vec2(0.0f,  0.0f),
-      glm::vec2(0.0f, 10.0f),
-      glm::vec2(10.0f, 10.0f),
+      glm::vec2(0.0f, 100.0f),
+      glm::vec2(100.0f, 100.0f),
     };
 
     for (int i = 0; i < 4; i++)

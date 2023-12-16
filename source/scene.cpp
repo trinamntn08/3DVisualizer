@@ -35,29 +35,13 @@ Scene::~Scene()
 void Scene::loadScene()
 {
 	Timer("loadScene");
-	/*
+	
     InitializeCubes(cubePath);
+
     CalculateSceneBounds();
 
-	SphereModel* ball1 = new SphereModel(ballPath, glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, 0.0f));
-	SphereModel* ball2 = new SphereModel(ballPath, glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, 0.0f));
-	SphereModel* ball3 = new SphereModel(ballPath, glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, 0.0f));
-    
-    m_allPhysicsObjects.push_back(ball1);
-    m_allPhysicsObjects.push_back(ball2);
-	m_allPhysicsObjects.push_back(ball3);
-
-	UpdateAllObjectsToFitScene();
-
-	ball1->Translation(glm::vec3(3.0f, 5.0f, 3.0f));
-	ball2->Translation(glm::vec3(-3.0f, 7.0f, 3.0f));
-	ball3->Translation(glm::vec3(0.0f, 4.0f, 3.0f));
-
-	ball1->SetCurrentPosAsOriginalPos();
-	ball2->SetCurrentPosAsOriginalPos();
-	ball3->SetCurrentPosAsOriginalPos();
-	*/
-
+	InitializeBalls(ballPath);
+	
 	m_plane = std::make_unique <PlaneModel>();
 	
 	if (m_typeSky == Sky::SkyBox)
@@ -87,7 +71,7 @@ void  Scene::ResetScene()
     }
 
 	// reset all cubes's position and velocity
-	for (auto& item : m_grounds)
+	for (auto& item : m_cubes)
 	{
 		item->ResetPosition();
 		item->ResetVelocity();
@@ -125,7 +109,7 @@ void Scene::UpdatePhysicsObjectToFitScene(PhysicsObject& object)
 }
 void Scene::OnUpdate(float deltaTime)
 {
-	for (auto& item : AllPhysicsObjects())
+	for (auto& item : m_allPhysicsObjects)
 	{
 		item->UpdatePhysics(m_properties.gravity ? m_gravity : glm::vec3(0.0f), deltaTime);
 	}
@@ -139,21 +123,23 @@ void Scene::OnUpdate(float deltaTime)
 
 void Scene::InitializeCubes(const std::string &filePath)
 {
-	m_grounds.clear();
-    // Load the cube model from Model class
+	m_cubes.clear();
+
     int numRows = 10; 
     int numCols = 10; 
     float spacing = 0.0f; // Spacing between cubes
 	float cubeSize = 2.0f;
 
-	// bottom walls
-	for (int row = 0; row < numRows; row++) {
-		for (int col = 0; col < numCols; col++) {
+
+	for (int row = 0; row < numRows; row++) 
+	{
+		for (int col = 0; col < numCols; col++) 
+		{
 			BoxModel* cube_i = new BoxModel(filePath);
-			glm::vec3 position(col * (spacing + cubeSize), 0.0f, row* (spacing + cubeSize));
+			glm::vec3 position(col * (spacing + cubeSize), 50.0f, row* (spacing + cubeSize));
 			cube_i->SetPosition(position);
 			cube_i->SetCurrentPosAsOriginalPos();
-			m_grounds.push_back(cube_i);
+			m_cubes.push_back(cube_i);
 		}
 	}
 	/*
@@ -200,10 +186,31 @@ void Scene::InitializeCubes(const std::string &filePath)
 
 }
 
+void Scene::InitializeBalls(const std::string& ballPath)
+{
+	SphereModel* ball1 = new SphereModel(ballPath, glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+	SphereModel* ball2 = new SphereModel(ballPath, glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+	SphereModel* ball3 = new SphereModel(ballPath, glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+
+	m_allPhysicsObjects.push_back(ball1);
+	m_allPhysicsObjects.push_back(ball2);
+	m_allPhysicsObjects.push_back(ball3);
+
+	UpdateAllObjectsToFitScene();
+
+	ball1->Translation(glm::vec3(3.0f, 5.0f, 3.0f));
+	ball2->Translation(glm::vec3(-3.0f, 7.0f, 3.0f));
+	ball3->Translation(glm::vec3(0.0f, 4.0f, 3.0f));
+
+	ball1->SetCurrentPosAsOriginalPos();
+	ball2->SetCurrentPosAsOriginalPos();
+	ball3->SetCurrentPosAsOriginalPos();
+}
+
 void Scene::CalculateSceneBounds()
 {
 	m_sceneBounds.Reset();
-	for (const BoxModel* cube : m_grounds)
+	for (const BoxModel* cube : m_cubes)
 	{
 		const BoundingBox& cubeBounds = cube->GetBoundingBox();
 		m_sceneBounds.ExpandToInclude(cubeBounds);
@@ -218,7 +225,7 @@ void Scene::Render(ShadersManager& shadersManager, const std::unique_ptr<Camera>
 	glCullFace(GL_BACK);
 	glEnable(GL_DEPTH_TEST);
 
-	RenderPhysicsObjects(shadersManager.scene,camera);
+	RenderPhysicsObjects(shadersManager.objects,camera);
 
 	if (m_typeSky == Sky::SkyBox)
 	{
@@ -240,7 +247,7 @@ void Scene::RenderPhysicsObjects(Shader& shader,const std::unique_ptr<Camera>& c
 	glm::mat4 projection = camera->GetProjectionMatrix();
 	shader.setMat_MVP(model, view, projection);
 
-	for (BoxModel* cube : m_grounds)
+	for (BoxModel* cube : m_cubes)
 	{
 		cube->Render(shader);
 	}
@@ -270,6 +277,20 @@ void Scene::RenderPhysicsObjects(Shader& shader,const std::unique_ptr<Camera>& c
 		BoundingBox bbox_terrain = m_terrain->GetBoundingBox();
 		bbox_terrain.Render(shader);
     }
+}
+void Scene::RenderPlane(Shader& shader_plane, const std::unique_ptr<Camera>& camera)
+{
+	shader_plane.activate();
+	// lighting info
+	static glm::vec3 lightPos(0.0f, 100.0f, 0.0f);
+	shader_plane.setVec3("lightPos", lightPos);
+	shader_plane.setInt("blinn", true);
+
+	glm::mat4 model_plane = glm::mat4(1.0f);
+	glm::mat4 view_plane = camera->GetViewMatrix();
+	glm::mat4 projection_plane = camera->GetProjectionMatrix();
+	shader_plane.setMat_MVP(model_plane, view_plane, projection_plane);
+	m_plane->Render(shader_plane);
 }
 void Scene::RenderSkyBox(Shader& shader_skybox, const std::unique_ptr<Camera>& camera)
 {
@@ -302,20 +323,7 @@ void Scene::RenderTerrain(Shader& shader_terrain, const std::unique_ptr<Camera>&
 	shader_terrain.activate();
 	m_terrain->Render(shader_terrain);
 }
-void Scene::RenderPlane(Shader& shader_plane,const std::unique_ptr<Camera>& camera)
-{
-	shader_plane.activate();
-	// lighting info
-	static glm::vec3 lightPos(0.0f, 100.0f, 0.0f);
-	shader_plane.setVec3("lightPos", lightPos);
-	shader_plane.setInt("blinn", true);
 
-	glm::mat4 model_plane = glm::mat4(1.0f);
-	glm::mat4 view_plane = camera->GetViewMatrix();
-	glm::mat4 projection_plane = camera->GetProjectionMatrix();
-	shader_plane.setMat_MVP(model_plane, view_plane, projection_plane);
-	m_plane->Render(shader_plane);
-}
 void Scene::RenderTerrainTesselation(Shader& shader_terrain, const std::unique_ptr<Camera>& camera)
 {
 	shader_terrain.activate();
@@ -379,13 +387,13 @@ void Scene::checkCollisions()
 		}
 	}
 
-	int nbrGrounds = m_grounds.size();
+	int nbrGrounds = m_cubes.size();
 	for (int objIdx = 0; objIdx < nbrObjects ; objIdx++)
 	{
 		PhysicsObject* physObj = m_allPhysicsObjects[objIdx];
 
 		for (int groundIndex = 0; groundIndex < nbrGrounds; groundIndex++) {
-			BoxModel* ground = m_grounds[groundIndex];
+			BoxModel* ground = m_cubes[groundIndex];
 
 			// Check for collision between physics object and ground
 			int shapeIdA = physObj->getShapeID();

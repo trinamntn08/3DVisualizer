@@ -29,8 +29,8 @@ enum class TypeCameraView
 // Default camera values
 const float YAW         = -90.0f;
 const float PITCH       =  0.0f;
-const float TRANSLATION_SPEED =  200.0f;
-const float ROTATION_SPEED = 1.2f;
+const float TRANSLATION_SPEED =  80.0f;
+const float ROTATION_SPEED = 0.8f;
 const float ZOOM        =  45.0f;
 
 class Camera

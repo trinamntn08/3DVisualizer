@@ -67,6 +67,7 @@ private:
     unsigned int VBO, EBO;
 
     void setupMesh();
-  //  void setupMeshWithoutIndices();
+    void setupMeshWithoutIndices();
+    void setupTessMesh();
 };
 #endif

@@ -156,9 +156,8 @@ bool Camera::OnUpdate(GLFWwindow* window,float deltaTime)
 		m_typeView = TypeCameraView::ThirdPerson;
 	}
 	
-	if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
+	if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS)
 	{
-		Log::info("Presse Space !!!");
 		m_isWireFrame = !m_isWireFrame;
 		if (m_isWireFrame)
 		{

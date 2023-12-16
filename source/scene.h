@@ -1,14 +1,17 @@
 #pragma once
 
+#include"camera.h"
+
 #include"PhysicsEngine/Box.h"
 #include"PhysicsEngine/Plane.h"
 
 #include"SkyBox.h"
 #include"Terrain.h"
 #include"SkyDome.h"
-#include<memory>
-#include"camera.h"
+
 #include"ShadersManager.h"
+
+#include<memory>
 
 const std::string cubePath = std::string("source/resources/cube/cube.gltf");
 const std::string spiderPath = std::string("source/resources/spider/spider.obj");
@@ -36,6 +39,8 @@ public:
 
     void InitializeCubes(const std::string& filePath);
 
+    void InitializeBalls(const std::string& filePath);
+
     // bounding box
     void CalculateSceneBounds();
     inline const BoundingBox& getSceneBounds() const { return m_sceneBounds;}
@@ -52,7 +57,6 @@ public:
 
     inline Sky typeSky() { return m_typeSky; };
 
-
     void Render(ShadersManager& shadersManager, const std::unique_ptr<Camera>& camera);
     void RenderPhysicsObjects(Shader & shader,const std::unique_ptr<Camera>& camera, bool isRender_BBoxes = false);
     void RenderSkyBox(Shader& shader_skyBox, const std::unique_ptr<Camera>& camera);
@@ -60,6 +64,7 @@ public:
     void RenderPlane(Shader& shader_plane,const std::unique_ptr<Camera>& camera);
     void RenderTerrain(Shader& shader_terrain, const std::unique_ptr<Camera>& camera);
     void RenderTerrainTesselation(Shader& shader_terrain, const std::unique_ptr<Camera>& camera);
+
 
     void ResetScene();
     void ClearScene();
@@ -87,7 +92,7 @@ public:
     /************************************************/
 
     // scene properties
-    PhysicsProperties m_properties;
+    PhysicsProperties m_properties= PhysicsProperties(true,true,true);
 
 
 private:
@@ -99,9 +104,10 @@ private:
     std::unique_ptr <PlaneModel> m_plane = nullptr;
 
     std::vector<PhysicsObject*> m_allPhysicsObjects;
-    std::vector<BoxModel*> m_grounds;
+    std::vector<BoxModel*> m_cubes;
+
     BoundingBox m_sceneBounds;
 
-    glm::vec3 m_gravity = glm::vec3(0.f,-3.0f,0.0f);
+    glm::vec3 m_gravity = glm::vec3(0.f,-2.0f,0.0f);
 
 };

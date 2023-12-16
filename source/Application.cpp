@@ -96,15 +96,15 @@ void Application::InitShader()
     // tell stb_image.h to flip loaded texture's on the y-axis (before loading model).
     stbi_set_flip_vertically_on_load(true);
 
-    Shader shader_scene   = Shader("source/shaders/core_vertex.glsl", "source/shaders/core_fragment.glsl");
+    Shader shader_objects   = Shader("source/shaders/core_vertex.glsl", "source/shaders/core_fragment.glsl");
     Shader shader_skyBox  = Shader("source/shaders/skybox_vertex.glsl", "source/shaders/skybox_fragment.glsl");
     Shader shader_skyDome = Shader("source/shaders/skydome_vertex.glsl", "source/shaders/skydome_fragment.glsl");
     Shader shader_terrain = Shader("source/shaders/gpuheight.vs", "source/shaders/gpuheight.glsl", nullptr,
                                    "source/shaders/gpuheight.tcs", "source/shaders/gpuheight.tes");
-    Shader shader_plane = Shader("source/shaders/adv_lighting_vertex.glsl", "source/shaders/adv_lighting_fragment.glsl");
+    Shader shader_plane   = Shader("source/shaders/adv_lighting_vertex.glsl", "source/shaders/adv_lighting_fragment.glsl");
 
     m_shadersManager.setPlaneShader(shader_plane);
-    m_shadersManager.setSceneShader(shader_scene);
+    m_shadersManager.setObjectsShader(shader_objects);
     m_shadersManager.setTerrainShader(shader_terrain);
     m_shadersManager.setSkyBoxShader(shader_skyBox);
     m_shadersManager.setSkyDomeShader(shader_skyDome);
@@ -120,7 +120,7 @@ void Application::ConfigCamera()
     }
     else if (m_camera->m_typeView == TypeCameraView::ThirdPerson)
     {
-          m_camera->LookAtBoundingBox(m_scene->getTerrain()->GetBoundingBox());
+          m_camera->LookAtBoundingBox(m_scene->getSceneBounds());
     }
     
 }

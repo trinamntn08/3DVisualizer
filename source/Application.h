@@ -10,7 +10,7 @@
 
 #include"shader.h"
 #include"camera.h"
-#include"scene.h"
+#include"Scene.h"
 #include"pickingTexture.h" // Not used yet
 #include"mousePicker.h" // Not used yet
 #include"traceRay.h"
@@ -24,8 +24,6 @@ struct AppSpecification
 	unsigned int height = 900;
 
 };
-
-
 
 class Application
 {

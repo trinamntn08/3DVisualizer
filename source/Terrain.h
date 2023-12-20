@@ -52,6 +52,14 @@ public:
 
 	const BoundingBox& GetBoundingBox() const { return m_bbox; };
 
+	inline unsigned int getWidth() { return m_width; }
+	inline unsigned int getDepth() { return m_depth; }
+
+	void storeTerrainHeightData(std::vector<float>& heightData)
+	{
+		m_heightMap = std::move(heightData);
+	};
+
 private:
 	glm::vec3 m_scale = glm::vec3(1.0f);
 
@@ -61,5 +69,5 @@ private:
 
 	BoundingBox m_bbox;
 
-	std::vector<std::vector<float>> m_heightMap;
+	std::vector<float> m_heightMap;
 };

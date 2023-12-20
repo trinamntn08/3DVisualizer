@@ -8,14 +8,15 @@
 #include<glm/gtc/matrix_transform.hpp>
 #include<glm/gtc/type_ptr.hpp>
 
-#include"shader.h"
-#include"camera.h"
+#include"Shader.h"
+#include"Camera.h"
 #include"Scene.h"
 #include"pickingTexture.h" // Not used yet
 #include"mousePicker.h" // Not used yet
 #include"traceRay.h"
-#include<memory>
 #include"ShadersManager.h"
+
+#include<memory>
 
 struct AppSpecification
 {

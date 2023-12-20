@@ -1,8 +1,9 @@
 #pragma once
 
 #include"PhysicsObject.h"
-#include"..\model.h"
-#include"..\boundingBox.h"
+#include"..\Model.h"
+#include"..\BoundingBox.h"
+
 #include<memory>
 
 class Box : public PhysicsObject
@@ -40,7 +41,6 @@ public:
 	BoxModel(BoxModel& other);
 
 	void Copy(const BoxModel& other);
-
 
 	virtual ~BoxModel() {};
 

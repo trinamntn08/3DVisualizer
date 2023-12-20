@@ -1,13 +1,15 @@
-#include"scene.h"
+#include"Scene.h"
 #include"traceRay.h"
 #include"PhysicsEngine/RigidBody.h"
 #include"PhysicsEngine/Sphere.h"
 #include"PhysicsEngine/Plane.h"
 #include"PhysicsEngine/Box.h"
-#include <glm/gtx/projection.hpp>
-#include <glm/gtx/perpendicular.hpp>
 #include"Timer.h"
 #include"Logger.h"
+
+#include <glm/gtx/projection.hpp>
+#include <glm/gtx/perpendicular.hpp>
+
 
 typedef bool(*fn)(PhysicsObject*, PhysicsObject*);
 
@@ -82,7 +84,7 @@ void  Scene::ResetScene()
 		}
 	}
 }
-void  Scene::ClearScene()
+void  Scene::ClearScene() 
 {
     m_allPhysicsObjects.clear();
 }
@@ -226,18 +228,19 @@ void Scene::Render(ShadersManager& shadersManager, const std::unique_ptr<Camera>
 	glEnable(GL_DEPTH_TEST);
 
 	RenderPhysicsObjects(shadersManager.objects,camera);
+	RenderPlane(shadersManager.plane, camera);
+
 
 	if (m_typeSky == Sky::SkyBox)
 	{
 		RenderSkyBox(shadersManager.skyBox, camera);
 	}
-	else if(m_typeSky == Sky::SkyDome)
+	else if (m_typeSky == Sky::SkyDome)
 	{
 		RenderSkyDome(shadersManager.skyDome, camera);
 	}
 
-	RenderPlane(shadersManager.plane, camera);
-	RenderTerrainTesselation(shadersManager.terrain, camera);
+//	RenderTerrainTesselation(shadersManager.terrain, camera);
 }
 void Scene::RenderPhysicsObjects(Shader& shader,const std::unique_ptr<Camera>& camera, bool isRender_BBoxes)
 {
@@ -276,13 +279,25 @@ void Scene::RenderPhysicsObjects(Shader& shader,const std::unique_ptr<Camera>& c
 
 		BoundingBox bbox_terrain = m_terrain->GetBoundingBox();
 		bbox_terrain.Render(shader);
+
     }
+	// Check for OpenGL errors
+	if (glGetError() != GL_NO_ERROR)
+	{
+		printf("OpenGL error PhysicsObject, code: 0x%x\n", glGetError());
+
+	}
 }
 void Scene::RenderPlane(Shader& shader_plane, const std::unique_ptr<Camera>& camera)
 {
 	shader_plane.activate();
+	GLenum error = glGetError();
+	if (error != GL_NO_ERROR)
+	{
+		printf("OpenGL error after activating shader, code: 0x%x\n", error);
+	}
 	// lighting info
-	static glm::vec3 lightPos(0.0f, 100.0f, 0.0f);
+	static glm::vec3 lightPos(0.0f, 20.0f, 0.0f);
 	shader_plane.setVec3("lightPos", lightPos);
 	shader_plane.setInt("blinn", true);
 
@@ -290,23 +305,49 @@ void Scene::RenderPlane(Shader& shader_plane, const std::unique_ptr<Camera>& cam
 	glm::mat4 view_plane = camera->GetViewMatrix();
 	glm::mat4 projection_plane = camera->GetProjectionMatrix();
 	shader_plane.setMat_MVP(model_plane, view_plane, projection_plane);
+	error = glGetError();
+	if (error != GL_NO_ERROR)
+	{
+		printf("OpenGL error after setting MVP matrix, code: 0x%x\n", error);
+	}
 	m_plane->Render(shader_plane);
+	// Check for OpenGL errors
+	if (glGetError() != GL_NO_ERROR)
+	{
+		printf("OpenGL error Plane, code: 0x%x\n", glGetError());
+
+	}
 }
 void Scene::RenderSkyBox(Shader& shader_skybox, const std::unique_ptr<Camera>& camera)
 {
+	// Save the current depth function
+	GLint originalDepthFunc;
+	glGetIntegerv(GL_DEPTH_FUNC, &originalDepthFunc);
+
 	glDepthFunc(GL_LEQUAL);
 	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 	shader_skybox.activate();
+
 	glm::mat4 model_skyBox = glm::mat4(1.0f);
 	glm::mat4 view_skyBox = camera->GetViewMatrix();
 	glm::mat4 projection_skyBox = camera->GetProjectionMatrix();
 	shader_skybox.setMat_MVP(model_skyBox, view_skyBox, projection_skyBox);
 	m_skyBox->Render(shader_skybox);
-
-	glDepthFunc(GL_LESS);
+	glDisable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+	// Restore the original depth function
+	glDepthFunc(originalDepthFunc);
+	glBindVertexArray(0);
+	// Check for OpenGL errors
+	if (glGetError() != GL_NO_ERROR)
+	{
+		printf("OpenGL error Sky, code: 0x%x\n", glGetError());
+	}
 }
 void Scene::RenderSkyDome(Shader& shader_skydome, const std::unique_ptr<Camera>& camera)
 {
+	// Save the current depth function
+	GLint originalDepthFunc;
+	glGetIntegerv(GL_DEPTH_FUNC, &originalDepthFunc);
 	glDepthFunc(GL_LEQUAL);
 	shader_skydome.activate();
 
@@ -316,12 +357,26 @@ void Scene::RenderSkyDome(Shader& shader_skydome, const std::unique_ptr<Camera>&
 	shader_skydome.setMat_MVP(model_skyDome, view_skyDome, projection_skyDome);
 
 	m_skyDome->Render(shader_skydome);
-	glDepthFunc(GL_LESS);
+
+	// Restore the original depth function
+	glDepthFunc(originalDepthFunc);
+
+	// Check for OpenGL errors
+	if (glGetError() != GL_NO_ERROR)
+	{
+		printf("OpenGL error Sky, code: 0x%x\n", glGetError());
+	}
 }
 void Scene::RenderTerrain(Shader& shader_terrain, const std::unique_ptr<Camera>& camera)
 {
 	shader_terrain.activate();
 	m_terrain->Render(shader_terrain);
+	// Check for OpenGL errors
+	if (glGetError() != GL_NO_ERROR)
+	{
+		printf("OpenGL error Terrain, code: 0x%x\n", glGetError());
+
+	}
 }
 
 void Scene::RenderTerrainTesselation(Shader& shader_terrain, const std::unique_ptr<Camera>& camera)
@@ -354,6 +409,12 @@ void Scene::RenderTerrainTesselation(Shader& shader_terrain, const std::unique_p
 	//m_shader_terrain.setVec3("gReversedLightDir", 0.0f, ReversedLightDir.y, ReversedLightDir.z );
 
 	m_terrain->RenderTesselation(shader_terrain);
+	// Check for OpenGL errors
+	if (glGetError() != GL_NO_ERROR)
+	{
+		printf("OpenGL error Terrain, code: 0x%x\n", glGetError());
+
+	}
 }
 /*********************************************************************************************************
 *                     COLLISIONS

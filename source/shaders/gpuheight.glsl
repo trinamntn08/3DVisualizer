@@ -1,6 +1,7 @@
 #version 410 core
 
 in float Height;
+in float HeightMap;
 in vec4 Normal;
 in vec2 texCoords;
 
@@ -14,7 +15,9 @@ uniform float gHeight1 = 210.0;
 uniform float gHeight2 = 250.0;
 uniform float gHeight3 = 280.0;
 
-out vec4 FragColor;
+layout(location = 0) out vec4 FragColor;
+layout(location = 1) out float HeightData;
+
 
 uniform vec3 gReversedLightDir;
 
@@ -53,13 +56,14 @@ vec4 CalcTexColor()
     {
        TexColor = texture(gTextureHeight3, texCoords*5+5);
     }
+
     TexColor = texture(gTextureHeight3, texCoords*5+5);
     return TexColor;
 }
 void main()
 {
     float c = (Height + 16)/64.0f;
- //   FragColor = vec4(Height, Height, Height, 1.0);
+ //   FragColor = vec4(0.5f, 0.0, 0.0, 1.0);
 
     vec4 TexColor = CalcTexColor();
     vec3 Normal_ = normalize(Normal.xyz);
@@ -67,5 +71,5 @@ void main()
     Diffuse = max(0.3f, Diffuse);
     vec4 Color = vec4(c, c, c, 1.0);
     FragColor = Color * 12.0f* TexColor * Diffuse;
-
+    HeightData= Height;
 }

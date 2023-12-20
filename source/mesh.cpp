@@ -1,4 +1,4 @@
-#include"mesh.h"
+#include"Mesh.h"
 
 extern unsigned int nbrPatchesTess;
 
@@ -73,6 +73,11 @@ void Mesh::Render(Shader& shader)
 
     // always good practice to set everything back to defaults once configured.
     glActiveTexture(GL_TEXTURE0);
+    GLenum error = glGetError();
+    if (error != GL_NO_ERROR)
+    {
+        printf("OpenGL error in Mesh::Render, code: 0x%x\n", error);
+    }
 }
 void Mesh::RenderSkyDome(Shader& shader)
 {

@@ -31,7 +31,7 @@ void BaseTerrain::Render(Shader& shader)
 
 void BaseTerrain::RenderTesselation(Shader& shader)
 {
-	shader.activate();
+	//shader.activate();
 	m_terrain->RenderTesselation(shader);
 }
 
@@ -250,7 +250,7 @@ std::vector<Vertex> BaseTerrain::InitVerticesWithHeightMapFromFile(const char* i
 
 				height_width.push_back(y);
 			}
-			m_heightMap.push_back(height_width);
+		//	m_heightMap.push_back(height_width);
 		}
 	}
 	stbi_image_free(data);
@@ -401,15 +401,15 @@ float BaseTerrain::GetHeightForPos(float x, float z)
 	float pos_z = z ;
 
 	// Apply the same translation as in the heightmap creation code
-	pos_x += ((int)m_heightMap.size()  / 2.0f);
-	pos_z += ((int)m_heightMap[0].size() / 2.0f);
+	pos_x += ((int)m_width / 2.0f);
+	pos_z += ((int)m_depth / 2.0f);
 
 	return GetHeightInterpolated(pos_x, pos_z);
 }
 float BaseTerrain::GetHeightInterpolated(float x, float z)
 {
 	// Ensure x and z are within valid bounds
-	if (x < 0.0f || x >= m_heightMap.size() - 1 || z < 0.0f || z >= m_heightMap[0].size() - 1) 
+	if (x < 0.0f || x >= m_width - 1 || z < 0.0f || z >= m_depth - 1)
 	{
 		return 0.0f;
 	}
@@ -423,17 +423,17 @@ float BaseTerrain::GetHeightInterpolated(float x, float z)
 	float zFraction = z - zIndex;
 
 	// Perform bilinear interpolation
-	float height00 = m_heightMap[xIndex][zIndex];
-	float height01 = m_heightMap[xIndex][zIndex + 1];
-	float height10 = m_heightMap[xIndex + 1][zIndex];
-	float height11 = m_heightMap[xIndex + 1][zIndex + 1];
+	float height00 = m_heightMap[zIndex * m_width + xIndex];
+	float height01 = m_heightMap[zIndex * m_width + (xIndex + 1)];
+	float height10 = m_heightMap[(zIndex + 1) * m_width + xIndex];
+	float height11 = m_heightMap[(zIndex + 1) * m_width + (xIndex + 1)];
 
-	float interpolatedHeightTop = glm::mix(height00, height01, zFraction);
-	float interpolatedHeightBottom = glm::mix(height10, height11, zFraction);
+	float interpolatedHeightTop = glm::mix(height00, height01, xFraction);
+	float interpolatedHeightBottom = glm::mix(height10, height11, xFraction);
 
-	return glm::mix(interpolatedHeightTop, interpolatedHeightBottom, xFraction);
-
+	return glm::mix(interpolatedHeightTop, interpolatedHeightBottom, zFraction);
 }
+
 glm::vec3 BaseTerrain::ConstrainCameraPosToTerrain(glm::vec3 camPos)
 {
 	glm::vec3 newCameraPos = camPos;
@@ -460,18 +460,20 @@ glm::vec3 BaseTerrain::ConstrainCameraPosToTerrain(glm::vec3 camPos)
 	}
 
 	newCameraPos.y = GetHeightForPos(newCameraPos.x , newCameraPos.z );
+
 	// Add an offset to simulate walking height
-	static float walkingHeightOffset = 20.0f;
+	static float walkingHeightOffset = 10.0f;
 	newCameraPos.y += walkingHeightOffset;
+	Log::info("y pos:" + std::to_string(newCameraPos.y));
 
 	// Apply smoothed oscillation to simulate walking motion
-	float oscillationFactor = 1.0f;
-	float t = glm::smoothstep(-1.0f, 1.0f, sinf(newCameraPos.x * oscillationFactor) + cosf(newCameraPos.z * oscillationFactor));
+	//float oscillationFactor = 1.0f;
+	//float t = glm::smoothstep(-1.0f, 1.0f, sinf(newCameraPos.x * oscillationFactor) + cosf(newCameraPos.z * oscillationFactor));
 
-	// Scale and offset the smoothstep result to control amplitude
-	float amplitude = 1/250.0f; // Adjust this value to control the amplitude of oscillation
-	float smoothedOscillation = t * amplitude;
-	// Apply the smoothed oscillation to the y-coordinate
-	newCameraPos.y += smoothedOscillation;
+	//// Scale and offset the smoothstep result to control amplitude
+	//float amplitude = 1/250.0f; // Adjust this value to control the amplitude of oscillation
+	//float smoothedOscillation = t * amplitude;
+	//// Apply the smoothed oscillation to the y-coordinate
+	//newCameraPos.y += smoothedOscillation;
 	return newCameraPos;
 }

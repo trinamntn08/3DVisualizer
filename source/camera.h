@@ -12,7 +12,7 @@
 #include<vector>
 #include"boundingBox.h"
 
-// Defines several possible options for camera movement. Used as abstraction to stay away from window-system specific input methods
+
 enum Camera_Movement {
     FORWARD,
     BACKWARD,
@@ -29,7 +29,7 @@ enum class TypeCameraView
 // Default camera values
 const float YAW         = -90.0f;
 const float PITCH       =  0.0f;
-const float TRANSLATION_SPEED =  80.0f;
+const float TRANSLATION_SPEED =  200.0f;
 const float ROTATION_SPEED = 0.8f;
 const float ZOOM        =  45.0f;
 
@@ -60,18 +60,6 @@ public:
 
 	int GetViewPortWidth() { return m_ViewportWidth; };
 	int GetViewPortHeight() { return m_ViewportHeight; };
-
-	inline bool isOnGroundMoving(GLFWwindow* window)
-	{
-		if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS ||
-			glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS ||
-			glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS ||
-			glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-			return true;
-
-		return false;
-
-	};
 
 	TypeCameraView m_typeView = TypeCameraView::FirstPerson;
 

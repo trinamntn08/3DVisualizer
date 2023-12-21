@@ -1,7 +1,6 @@
 #version 410 core
 
 in float Height;
-in float HeightMap;
 in vec4 Normal;
 in vec2 texCoords;
 

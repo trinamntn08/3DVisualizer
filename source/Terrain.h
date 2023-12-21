@@ -60,6 +60,8 @@ public:
 		m_heightMap = std::move(heightData);
 	};
 
+	inline const std::vector<float>& getHeightMap() { return m_heightMap; }
+
 private:
 	glm::vec3 m_scale = glm::vec3(1.0f);
 

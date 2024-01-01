@@ -12,6 +12,7 @@ in vec2 TextureCoord[];
 out float Height;
 out vec2 texCoords;
 out vec4 Normal;
+out float realHeight;
 
 void main()
 {
@@ -47,5 +48,5 @@ void main()
     Normal= normal;
 
     gl_Position = projection * view * model * p;
-
+    realHeight=p.y;
 }

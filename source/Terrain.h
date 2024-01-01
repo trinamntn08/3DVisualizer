@@ -6,18 +6,19 @@
 
 class Shader;
 
-static std::string path_terrain_texture = "source/resources/terrain/";
+//static std::string path_terrain_texture = "source/resources/terrain/";
 static std::string heightMapFile = "source/resources/terrain/heightmap_paris.png"; 
-
+static std::string path_terrain_texture = "source/resources/RuggedTerrain/";
+//static std::string heightMapFile = "source/resources/RuggedTerrain/HeightMap.png";
 extern unsigned int nbrPatchesTess ;
 
 
-class BaseTerrain:public PhysicsObject
+class Terrain:public PhysicsObject
 {
 public:
-	BaseTerrain(glm::vec3 scale= glm::vec3(1.0f,1.0f,1.0f));
+	Terrain(glm::vec3 scale= glm::vec3(1.0f,1.0f,1.0f));
 
-	virtual ~BaseTerrain();
+	virtual ~Terrain();
 
 	virtual void UpdatePhysics(glm::vec3 gravity, float timeStep);
 
@@ -61,6 +62,7 @@ public:
 	};
 
 	inline const std::vector<float>& getHeightMap() { return m_heightMap; }
+
 
 private:
 	glm::vec3 m_scale = glm::vec3(1.0f);

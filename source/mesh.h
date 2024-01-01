@@ -22,6 +22,7 @@ struct Vertex
     glm::vec2 TexCoords;
     glm::vec3 Tangent;
     glm::vec3 Bitangent;
+    glm::vec2 a_Postion; // additional  2D vector attribute
 	//bone indexes which will influence this vertex
 	int m_BoneIDs[MAX_BONE_INFLUENCE];
 	//weights from each bone
@@ -62,6 +63,7 @@ public:
     void Render(Shader& shader);
     void RenderSkyDome(Shader& shader);
     void RenderTesselation(Shader& shader);
+    void RenderTerrain(Shader& shader, int res, int nInstances);
 private:
     // render data 
     unsigned int VBO, EBO;

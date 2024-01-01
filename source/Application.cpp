@@ -4,6 +4,10 @@
 #include"PhysicsEngine/Sphere.h"
 #include"Timer.h"
 
+#include<imgui.h>
+#include<imgui_impl_glfw.h>
+#include<imgui_impl_opengl3.h>
+
 Application* CreateApplication()
 {
 	AppSpecification spec;
@@ -99,15 +103,22 @@ void Application::InitShader()
     Shader shader_objects   = Shader("source/shaders/core_vertex.glsl", "source/shaders/core_fragment.glsl");
     Shader shader_skyBox  = Shader("source/shaders/skybox_vertex.glsl", "source/shaders/skybox_fragment.glsl");
     Shader shader_skyDome = Shader("source/shaders/skydome_vertex.glsl", "source/shaders/skydome_fragment.glsl");
-    Shader shader_terrain = Shader("source/shaders/gpuheight.vs", "source/shaders/gpuheight.glsl", nullptr,
-                                   "source/shaders/gpuheight.tcs", "source/shaders/gpuheight.tes");
-    Shader shader_plane   = Shader("source/shaders/adv_lighting_vertex.glsl", "source/shaders/adv_lighting_fragment.glsl");
+ //   Shader shader_terrain = Shader("source/shaders/gpuheight.vs", "source/shaders/gpuheight.glsl", nullptr,
+  //                                 "source/shaders/gpuheight.tcs", "source/shaders/gpuheight.tes");    
+ //   Shader shader_terrain = Shader("source/shaders/terrain_vertex.glsl", "source/shaders/terrain_fragment.glsl");
 
+    Shader shader_terrain = Shader("source/shaders/terrain/terrain.vert", 
+                                    "source/shaders/terrain/terrain.frag",
+                                    nullptr,
+                                    "source/shaders/terrain/terrain.tcs",
+                                    "source/shaders/terrain/terrain.tes");
+    Shader shader_plane = Shader("source/shaders/adv_lighting_vertex.glsl", 
+                                    "source/shaders/adv_lighting_fragment.glsl");
     m_shadersManager.setPlaneShader(shader_plane);
     m_shadersManager.setObjectsShader(shader_objects);
-    m_shadersManager.setTerrainShader(shader_terrain);
     m_shadersManager.setSkyBoxShader(shader_skyBox);
     m_shadersManager.setSkyDomeShader(shader_skyDome);
+    m_shadersManager.setTerrainShader(shader_terrain);
 }
 
 void Application::ConfigCamera()
@@ -127,10 +138,13 @@ void Application::ConfigCamera()
 
 void Application::Run()
 {
+
     m_running = true;
     
     m_scene =std::make_unique<Scene>(Sky::SkyDome);
     ConfigCamera();
+    
+    /*
     unsigned int width = m_scene->getTerrain()->getWidth();
     unsigned int height = m_scene->getTerrain()->getDepth();
 
@@ -157,10 +171,27 @@ void Application::Run()
 
     // Unbind the framebuffer
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    int frameCounter = 0;
+    */
+
+
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO(); (void)io;
+    ImGui::StyleColorsDark();
+    ImGui_ImplGlfw_InitForOpenGL(m_window, true);
+    ImGui_ImplOpenGL3_Init("#version 410");
 
     // render loop
     while (!glfwWindowShouldClose(m_window))
     {
+        // Start ImGui frame
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+
+        m_scene->getTerrain2()->setGui();
+
         // per-frame time logic
         float currentFrame = (float)glfwGetTime();
         m_frameTime = currentFrame - m_lastFrameTime;
@@ -186,54 +217,83 @@ void Application::Run()
 
         m_scene->Render(m_shadersManager,m_camera);
 
-        glm::mat4 model_terrain = glm::mat4(1.0f);
-        model_terrain = glm::scale(model_terrain, m_scene->getTerrain()->GetScale());
-        glm::mat4 view_terrain = m_camera->GetViewMatrix();
-        glm::mat4 projection_terrain = m_camera->GetProjectionMatrix();
+        /*
+        //glm::mat4 model_terrain = glm::mat4(1.0f);
+        //model_terrain = glm::scale(model_terrain, m_scene->getTerrain()->GetScale());
+        //glm::mat4 view_terrain = m_camera->GetViewMatrix();
+        //glm::mat4 projection_terrain = m_camera->GetProjectionMatrix();
+       
+        //static bool isHeightMapLoaded = false;
+        //if (!isHeightMapLoaded)
+        //{
+        //    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+        //    m_shadersManager.terrain.activate();
+        //    GLenum error = glGetError();
+        //    if (error != GL_NO_ERROR)
+        //    {
+        //        printf("OpenGL error after activating shader, code: 0x%x\n", error);
+        //    }
 
-        static bool isHeightMapLoaded = false;
-        if (!isHeightMapLoaded)
-        {
-            glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
-            m_shadersManager.terrain.activate();
-            GLenum error = glGetError();
-            if (error != GL_NO_ERROR)
-            {
-                printf("OpenGL error after activating shader, code: 0x%x\n", error);
-            }
+        //    m_shadersManager.terrain.setMat_MVP(model_terrain, view_terrain, projection_terrain);
 
-            m_shadersManager.terrain.setMat_MVP(model_terrain, view_terrain, projection_terrain);
+        //    m_scene->getTerrain()->RenderTesselation(m_shadersManager.terrain);
 
-            m_scene->getTerrain()->RenderTesselation(m_shadersManager.terrain);
-            // Check for OpenGL errors
-            if (glGetError() != GL_NO_ERROR)
-            {
-                printf("OpenGL error terrain, code: 0x%x\n", glGetError());
-            }
+        //    float* data = new float[width * height];
+        //    // Bind the framebuffer before reading
+        //    glReadBuffer(GL_COLOR_ATTACHMENT1); // Set the read buffer to the height data attachment
+        //    glReadPixels(0, 0, width, height, GL_RED, GL_FLOAT, data);
+        //    std::vector<float> heightData(data, data + width * height);
 
-            float* data = new float[width * height];
-            // Bind the framebuffer before reading
-            glReadBuffer(GL_COLOR_ATTACHMENT1); // Set the read buffer to the height data attachment
-            glReadPixels(0, 0, width, height, GL_RED, GL_FLOAT, data);
-            std::vector<float> heightData(data, data + width * height);
-            m_scene->getTerrain()->storeTerrainHeightData(heightData);
-            delete[] data;
-            isHeightMapLoaded = true;
-            // Unbind the framebuffer after reading
-            glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        }
+        //    m_scene->getTerrain()->storeTerrainHeightData(heightData);
+        //    delete[] data;
+        //    isHeightMapLoaded = true;
+        //    // Unbind the framebuffer after reading
+        //    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        //}
+        //
 
-        m_shadersManager.terrain.activate();
-        m_shadersManager.terrain.setMat_MVP(model_terrain, view_terrain, projection_terrain);
-        m_scene->getTerrain()->RenderTesselation(m_shadersManager.terrain);
+        // Function to get height per (x,y) pixel
+        //if (m_camera->m_typeView == TypeCameraView::FirstPerson && m_camera->isMoving())
+        //{
+        //    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+        //    m_shadersManager.terrain.activate();
+        //    m_shadersManager.terrain.setMat_MVP(model_terrain, view_terrain, projection_terrain);
+        //    m_scene->getTerrain()->RenderTesselation(m_shadersManager.terrain);
+        //    glReadBuffer(GL_COLOR_ATTACHMENT1);
+        //    glm::vec2 pos = m_camera->ConvertCameraPosToPixel(m_window);
+
+        //    float height;
+        //    glReadPixels(pos.x, pos.y, 1, 1, GL_RED, GL_FLOAT, &height);
+        //    Log::info("Height Pos: " + std::to_string(height));
+        //    glm::vec3 cam_pos = m_camera->GetPosition();
+        //    glm::vec3 cam_newPos(cam_pos.x, height + 2.0f, cam_pos.z);
+        //    m_camera->SetPosition(cam_newPos);
+        //    // Unbind the framebuffer after reading
+        //    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        //}
+        //
+        //
+
+        //m_shadersManager.terrain.activate();
+        //m_shadersManager.terrain.setMat_MVP(model_terrain, view_terrain, projection_terrain);
+        //m_scene->getTerrain()->Render(m_shadersManager.terrain);
+        */
+
         
-        // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
-        // -------------------------------------------------------------------------------
+        // Render ImGui
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+        // glfw: swap buffers and process input events
+        // --------------------------------------------
         glfwSwapBuffers(m_window);
         glfwPollEvents();
-        // Bind the default framebuffer to continue rendering to the screen
-
     }
+    // Cleanup
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
+
 }
 
 void Application::DisplayFPS(float currentFrame)

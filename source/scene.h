@@ -8,6 +8,7 @@
 #include"SkyBox.h"
 #include"Terrain.h"
 #include"SkyDome.h"
+#include"Terrain2.h"
 
 #include"ShadersManager.h"
 
@@ -63,6 +64,7 @@ public:
     void RenderSkyDome(Shader& shader_skydome, const std::unique_ptr<Camera>& camera);
     void RenderPlane(Shader& shader_plane,const std::unique_ptr<Camera>& camera);
     void RenderTerrain(Shader& shader_terrain, const std::unique_ptr<Camera>& camera);
+    void RenderTerrain2(Shader& shader_terrain2, const std::unique_ptr<Camera>& camera);
     void RenderTerrainTesselation(Shader& shader_terrain, const std::unique_ptr<Camera>& camera);
 
 
@@ -70,7 +72,8 @@ public:
     void ClearScene();
 
 
-    inline std::unique_ptr <BaseTerrain>& getTerrain() { return m_terrain; };
+    inline std::unique_ptr <Terrain>& getTerrain() { return m_terrain; };
+    inline std::unique_ptr <Terrain2>& getTerrain2() { return m_terrain2; };
     inline std::unique_ptr <SkyDome>& getSkyDome() { return m_skyDome; };
     inline std::unique_ptr <Skybox>& getSkyBox() { return m_skyBox; };
     inline std::unique_ptr <PlaneModel>& getPlane() { return m_plane; }
@@ -100,8 +103,9 @@ private:
 
     std::unique_ptr<Skybox> m_skyBox=nullptr;
     std::unique_ptr<SkyDome> m_skyDome = nullptr;
-    std::unique_ptr<BaseTerrain> m_terrain = nullptr;
+    std::unique_ptr<Terrain> m_terrain = nullptr;
     std::unique_ptr <PlaneModel> m_plane = nullptr;
+    std::unique_ptr<Terrain2> m_terrain2 = nullptr;
 
     std::vector<PhysicsObject*> m_allPhysicsObjects;
     std::vector<BoxModel*> m_cubes;

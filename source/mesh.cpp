@@ -39,110 +39,6 @@ Mesh::~Mesh()
     //// Delete the vertex array object
     //glDeleteVertexArrays(1, &VAO);
 }
-void Mesh::Render(Shader& shader)
-{
-    // bind appropriate textures
-    unsigned int diffuseNr = 1;
-    unsigned int specularNr = 1;
-    unsigned int normalNr = 1;
-    unsigned int heightNr = 1;
-
-    for (unsigned int i = 0; i < textures.size(); i++)
-    {
-        glActiveTexture(GL_TEXTURE0 + i); // active proper texture unit before binding
-        // retrieve texture number (the N in diffuse_textureN)
-        string number;
-        string name = textures[i].type;
-        if (name == "texture_diffuse")
-            number = std::to_string(diffuseNr++);
-        else if (name == "texture_specular")
-            number = std::to_string(specularNr++); // transfer unsigned int to string
-        else if (name == "texture_normal")
-            number = std::to_string(normalNr++); // transfer unsigned int to string
-
-       // now set the sampler to the correct texture unit
-        glUniform1i(glGetUniformLocation(shader.ID, (name + number).c_str()), i);
-        // and finally bind the texture
-        glBindTexture(GL_TEXTURE_2D, textures[i].id);
-    }
-
-    // draw mesh
-    glBindVertexArray(VAO);
-    glDrawElements(GL_TRIANGLES, static_cast<unsigned int>(indices.size()), GL_UNSIGNED_INT, 0);
-    glBindVertexArray(0);
-
-    // always good practice to set everything back to defaults once configured.
-    glActiveTexture(GL_TEXTURE0);
-    GLenum error = glGetError();
-    if (error != GL_NO_ERROR)
-    {
-        printf("OpenGL error in Mesh::Render, code: 0x%x\n", error);
-    }
-}
-void Mesh::RenderSkyDome(Shader& shader)
-{
-    // bind appropriate textures
-    unsigned int skydomeNr = 1;
-
-    for (unsigned int i = 0; i < textures.size(); i++)
-    {
-        glActiveTexture(GL_TEXTURE0 + i); // active proper texture unit before binding
-        // retrieve texture number (the N in diffuse_textureN)
-        string number;
-        string name = textures[i].type;
-        if (name == "skydome")
-            number = std::to_string(skydomeNr++);
-
-        // now set the sampler to the correct texture unit
-        glUniform1i(glGetUniformLocation(shader.ID, (name + number).c_str()), i);
-        // and finally bind the texture
-        glBindTexture(GL_TEXTURE_2D, textures[i].id);
-    }
-
-    // draw mesh
-    glBindVertexArray(VAO);
-    glDrawArrays(GL_TRIANGLES,0, static_cast<unsigned int>(vertices.size()));
-    glBindVertexArray(0);
-
-    // always good practice to set everything back to defaults once configured.
-    glActiveTexture(GL_TEXTURE0);
-}
-void Mesh::RenderTesselation(Shader& shader)
-{
-    // bind appropriate textures
-    unsigned int diffuseNr = 1;
-    unsigned int specularNr = 1;
-    unsigned int normalNr = 1;
-    unsigned int heightNr = 1;
-
-    for (unsigned int i = 0; i < textures.size(); i++)
-    {
-        glActiveTexture(GL_TEXTURE0 + i); // active proper texture unit before binding
-        // retrieve texture number (the N in diffuse_textureN)
-        string number;
-        string name = textures[i].type;
-        if (name == "texture_diffuse")
-            number = std::to_string(diffuseNr++);
-        else if (name == "texture_specular")
-            number = std::to_string(specularNr++); // transfer unsigned int to string
-        else if (name == "texture_normal")
-            number = std::to_string(normalNr++); // transfer unsigned int to string
-
-        // now set the sampler to the correct texture unit
-        glUniform1i(glGetUniformLocation(shader.ID, (name + number).c_str()), i);
-        // and finally bind the texture
-        glBindTexture(GL_TEXTURE_2D, textures[i].id);
-    }
-
-    // draw mesh
-    glBindVertexArray(VAO);
-    glDrawArrays(GL_PATCHES, 0, 4* nbrPatchesTess * nbrPatchesTess);
-    glBindVertexArray(0);
-
-    // always good practice to set everything back to defaults once configured.
-    glActiveTexture(GL_TEXTURE0);
-}
-
 void Mesh::setupMesh()
 {
     // create buffers/arrays
@@ -160,7 +56,6 @@ void Mesh::setupMesh()
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], GL_STATIC_DRAW);
-   
 
     // set the vertex attribute pointers
     // vertex Positions
@@ -185,6 +80,9 @@ void Mesh::setupMesh()
     // weights
     glEnableVertexAttribArray(6);
     glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, m_Weights));
+    // a_Position
+    glEnableVertexAttribArray(7);
+    glVertexAttribPointer(7, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, a_Postion));
     glBindVertexArray(0);
     GLenum err;
     while ((err = glGetError()) != GL_NO_ERROR) {
@@ -279,4 +177,143 @@ void Mesh::setupTessMesh()
         std::cerr << "OpenGL error: " << err << std::endl;
     }
     glPatchParameteri(GL_PATCH_VERTICES, 4);
+}
+void Mesh::Render(Shader& shader)
+{
+    // bind appropriate textures
+    unsigned int diffuseNr = 1;
+    unsigned int specularNr = 1;
+    unsigned int normalNr = 1;
+    unsigned int heightNr = 1;
+
+    for (unsigned int i = 0; i < textures.size(); i++)
+    {
+        glActiveTexture(GL_TEXTURE0 + i); // active proper texture unit before binding
+        // retrieve texture number (the N in diffuse_textureN)
+        string number;
+        string name = textures[i].type;
+        if (name == "texture_diffuse")
+            number = std::to_string(diffuseNr++);
+        else if (name == "texture_specular")
+            number = std::to_string(specularNr++); // transfer unsigned int to string
+        else if (name == "texture_normal")
+            number = std::to_string(normalNr++); // transfer unsigned int to string
+
+       // now set the sampler to the correct texture unit
+        glUniform1i(glGetUniformLocation(shader.ID, (name + number).c_str()), i);
+        // and finally bind the texture
+        glBindTexture(GL_TEXTURE_2D, textures[i].id);
+    }
+
+    // draw mesh
+    glBindVertexArray(VAO);
+    glDrawElements(GL_TRIANGLES, static_cast<unsigned int>(indices.size()), GL_UNSIGNED_INT, 0);
+    glBindVertexArray(0);
+
+    // always good practice to set everything back to defaults once configured.
+    glActiveTexture(GL_TEXTURE0);
+    GLenum error = glGetError();
+    if (error != GL_NO_ERROR)
+    {
+        printf("OpenGL error in Mesh::Render, code: 0x%x\n", error);
+    }
+
+}
+void Mesh::RenderSkyDome(Shader& shader)
+{
+    // bind appropriate textures
+    unsigned int skydomeNr = 1;
+
+    for (unsigned int i = 0; i < textures.size(); i++)
+    {
+        glActiveTexture(GL_TEXTURE0 + i); // active proper texture unit before binding
+        // retrieve texture number (the N in diffuse_textureN)
+        string number;
+        string name = textures[i].type;
+        if (name == "skydome")
+            number = std::to_string(skydomeNr++);
+
+        // now set the sampler to the correct texture unit
+        glUniform1i(glGetUniformLocation(shader.ID, (name + number).c_str()), i);
+        // and finally bind the texture
+        glBindTexture(GL_TEXTURE_2D, textures[i].id);
+    }
+
+    // draw mesh
+    glBindVertexArray(VAO);
+    glDrawArrays(GL_TRIANGLES,0, static_cast<unsigned int>(vertices.size()));
+    glBindVertexArray(0);
+
+    // always good practice to set everything back to defaults once configured.
+    glActiveTexture(GL_TEXTURE0);
+}
+void Mesh::RenderTesselation(Shader& shader)
+{
+    // bind appropriate textures
+    unsigned int diffuseNr = 1;
+    unsigned int specularNr = 1;
+    unsigned int normalNr = 1;
+    unsigned int heightNr = 1;
+
+    for (unsigned int i = 0; i < textures.size(); i++)
+    {
+        glActiveTexture(GL_TEXTURE0 + i); // active proper texture unit before binding
+        // retrieve texture number (the N in diffuse_textureN)
+        string number;
+        string name = textures[i].type;
+        if (name == "texture_diffuse")
+            number = std::to_string(diffuseNr++);
+        else if (name == "texture_specular")
+            number = std::to_string(specularNr++); // transfer unsigned int to string
+        else if (name == "texture_normal")
+            number = std::to_string(normalNr++); // transfer unsigned int to string
+
+        // now set the sampler to the correct texture unit
+        glUniform1i(glGetUniformLocation(shader.ID, (name + number).c_str()), i);
+        // and finally bind the texture
+        glBindTexture(GL_TEXTURE_2D, textures[i].id);
+    }
+
+    // draw mesh
+    glBindVertexArray(VAO);
+    glDrawArrays(GL_PATCHES, 0, 4* nbrPatchesTess * nbrPatchesTess);
+    glBindVertexArray(0);
+
+    // always good practice to set everything back to defaults once configured.
+    glActiveTexture(GL_TEXTURE0);
+}
+void Mesh::RenderTerrain(Shader& shader, int res, int nInstances)
+{
+    // bind appropriate textures
+    unsigned int diffuseNr = 1;
+    unsigned int specularNr = 1;
+    unsigned int normalNr = 1;
+    unsigned int heightNr = 1;
+
+    for (unsigned int i = 0; i < textures.size(); i++)
+    {
+        glActiveTexture(GL_TEXTURE0 + i); // active proper texture unit before binding
+        // retrieve texture number (the N in diffuse_textureN)
+        string number;
+        string name = textures[i].type;
+        if (name == "texture_diffuse")
+            number = std::to_string(diffuseNr++);
+        else if (name == "texture_specular")
+            number = std::to_string(specularNr++); // transfer unsigned int to string
+        else if (name == "texture_normal")
+            number = std::to_string(normalNr++); // transfer unsigned int to string
+
+        // now set the sampler to the correct texture unit
+        glUniform1i(glGetUniformLocation(shader.ID, (name + number).c_str()), i);
+        // and finally bind the texture
+        glBindTexture(GL_TEXTURE_2D, textures[i].id);
+    }
+
+    // draw mesh
+    glBindVertexArray(VAO);
+    glDrawElementsInstanced(GL_PATCHES, (res - 1) * (res - 1) * 2 * 3, GL_UNSIGNED_INT, 0, nInstances);
+    glBindVertexArray(0);
+
+    // always good practice to set everything back to defaults once configured.
+    glActiveTexture(GL_TEXTURE0);
 }

@@ -55,7 +55,9 @@ void Scene::loadScene()
 		m_skyDome = std::make_unique<SkyDome>();
 	}
 
-	m_terrain = std::make_unique<BaseTerrain>();
+//	m_terrain = std::make_unique<Terrain>();
+
+	m_terrain2 = std::make_unique<Terrain2>();
 	
 }
 void  Scene::ResetScene()
@@ -227,8 +229,8 @@ void Scene::Render(ShadersManager& shadersManager, const std::unique_ptr<Camera>
 	glCullFace(GL_BACK);
 	glEnable(GL_DEPTH_TEST);
 
-	RenderPhysicsObjects(shadersManager.objects,camera);
-	RenderPlane(shadersManager.plane, camera);
+	/*RenderPhysicsObjects(shadersManager.objects,camera);
+	RenderPlane(shadersManager.plane, camera);*/
 
 
 	if (m_typeSky == Sky::SkyBox)
@@ -241,6 +243,7 @@ void Scene::Render(ShadersManager& shadersManager, const std::unique_ptr<Camera>
 	}
 
 //	RenderTerrainTesselation(shadersManager.terrain, camera);
+	RenderTerrain2(shadersManager.terrain, camera);
 }
 void Scene::RenderPhysicsObjects(Shader& shader,const std::unique_ptr<Camera>& camera, bool isRender_BBoxes)
 {
@@ -371,6 +374,21 @@ void Scene::RenderTerrain(Shader& shader_terrain, const std::unique_ptr<Camera>&
 {
 	shader_terrain.activate();
 	m_terrain->Render(shader_terrain);
+	// Check for OpenGL errors
+	if (glGetError() != GL_NO_ERROR)
+	{
+		printf("OpenGL error Terrain, code: 0x%x\n", glGetError());
+
+	}
+}
+void Scene::RenderTerrain2(Shader& shader_terrain2, const std::unique_ptr<Camera>& camera)
+{
+	shader_terrain2.activate();
+	glm::mat4 model = glm::mat4(1.0f);
+	glm::mat4 view = camera->GetViewMatrix();
+	glm::mat4 projection = camera->GetProjectionMatrix();
+	shader_terrain2.setMat_MVP(model, view, projection);
+	m_terrain2->Render(shader_terrain2,camera);
 	// Check for OpenGL errors
 	if (glGetError() != GL_NO_ERROR)
 	{

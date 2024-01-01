@@ -39,6 +39,12 @@ public:
     { 
         glUniform1f(glGetUniformLocation(ID, name.c_str()), value); 
     }
+    void setSampler2D(const std::string& name, unsigned int texture, int id) const
+    {
+        glActiveTexture(GL_TEXTURE0 + id);
+        glBindTexture(GL_TEXTURE_2D, texture);
+        this->setInt(name, id);
+    }
     // ------------------------------------------------------------------------
     void setVec2(const std::string &name, const glm::vec2 &value) const
     { 
@@ -66,6 +72,7 @@ public:
     { 
         glUniform4f(glGetUniformLocation(ID, name.c_str()), x, y, z, w); 
     }
+
     // ------------------------------------------------------------------------
     void setMat2(const std::string &name, const glm::mat2 &mat) const
     {

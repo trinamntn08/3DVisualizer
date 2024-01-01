@@ -3,6 +3,7 @@
 in float Height;
 in vec4 Normal;
 in vec2 texCoords;
+in float realHeight;
 
 uniform sampler2D gTextureHeight0;
 uniform sampler2D gTextureHeight1;
@@ -16,7 +17,6 @@ uniform float gHeight3 = 280.0;
 
 layout(location = 0) out vec4 FragColor;
 layout(location = 1) out float HeightData;
-
 
 uniform vec3 gReversedLightDir;
 
@@ -62,13 +62,13 @@ vec4 CalcTexColor()
 void main()
 {
     float c = (Height + 16)/64.0f;
- //   FragColor = vec4(0.5f, 0.0, 0.0, 1.0);
+  //  FragColor = vec4(Height, Height, Height, 1.0);
 
     vec4 TexColor = CalcTexColor();
     vec3 Normal_ = normalize(Normal.xyz);
     float Diffuse = dot(Normal_, gReversedLightDir);
     Diffuse = max(0.3f, Diffuse);
     vec4 Color = vec4(c, c, c, 1.0);
-    FragColor = Color * 12.0f* TexColor * Diffuse;
-    HeightData= Height;
+    FragColor = Color * 8.0f* TexColor * Diffuse;
+    HeightData= realHeight;
 }

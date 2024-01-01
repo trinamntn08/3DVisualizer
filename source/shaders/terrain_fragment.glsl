@@ -69,7 +69,7 @@ void main()
     Diffuse = max(0.3f, Diffuse);
     FragColor = Color * 6.0f* TexColor * Diffuse;
 
-//    float h = ( WorldPos.y + 16)/32.0f;	// shift and scale the height into a grayscale value
-//    FragColor = vec4(h, h, h, 1.0);
+ //  float h = ( WorldPos.y + 16)/32.0f;	// shift and scale the height into a grayscale value
+ //   FragColor = vec4(h, h, h, 1.0);
 
 }

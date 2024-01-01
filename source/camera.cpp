@@ -65,7 +65,7 @@ bool Camera::OnUpdate(GLFWwindow* window,float deltaTime)
 
 			}
 
-			m_isMoved = true;
+			m_isMoving = true;
 			
 		}
 	}
@@ -87,26 +87,28 @@ bool Camera::OnUpdate(GLFWwindow* window,float deltaTime)
 		{
 			m_Position.x += m_ForwardDirection.x * velocity/ smoothFactor;
 			m_Position.z += m_ForwardDirection.z * velocity / smoothFactor;
-			m_isMoved = true;
+			m_isMoving = true;
 		}
 		else if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
 		{
 			m_Position.x -= m_ForwardDirection.x * velocity / smoothFactor;
 			m_Position.z -= m_ForwardDirection.z * velocity / smoothFactor;
-			m_isMoved = true;
+			m_isMoving = true;
 		}
+		
 		if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
 		{
 			m_Position.x -= rightDirection.x * velocity / smoothFactor;
 			m_Position.z -= rightDirection.z * velocity / smoothFactor;
-			m_isMoved = true;
+			m_isMoving = true;
 		}
-		if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+		else if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
 		{
 			m_Position.x += rightDirection.x * velocity / smoothFactor;
 			m_Position.z += rightDirection.z * velocity / smoothFactor;
-			m_isMoved = true;
+			m_isMoving = true;
 		}
+		
 	}
 		break;
 	case TypeCameraView::ThirdPerson:
@@ -114,32 +116,34 @@ bool Camera::OnUpdate(GLFWwindow* window,float deltaTime)
 		if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
 		{
 			m_Position += m_ForwardDirection * velocity;
-			m_isMoved = true;
+			m_isMoving = true;
 		}
 		else if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
 		{
 			m_Position -= m_ForwardDirection * velocity;
-			m_isMoved = true;
+			m_isMoving = true;
 		}
+
 		if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
 		{
 			m_Position -= rightDirection * velocity;
-			m_isMoved = true;
+			m_isMoving = true;
 		}
-		if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+		else if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
 		{
 			m_Position += rightDirection * velocity;
-			m_isMoved = true;
+			m_isMoving = true;
 		}
+
 		if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
 		{
 			m_Position -= upDirection * velocity;
-			m_isMoved = true;
+			m_isMoving = true;
 		}
 		else if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
 		{
 			m_Position += upDirection * velocity;
-			m_isMoved = true;
+			m_isMoving = true;
 		}
 	}
 		break;
@@ -156,7 +160,7 @@ bool Camera::OnUpdate(GLFWwindow* window,float deltaTime)
 		m_typeView = TypeCameraView::ThirdPerson;
 	}
 	
-	if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS)
+	if (glfwGetKey(window, GLFW_KEY_ENTER) == GLFW_PRESS)
 	{
 		m_isWireFrame = !m_isWireFrame;
 		if (m_isWireFrame)
@@ -175,11 +179,11 @@ bool Camera::OnUpdate(GLFWwindow* window,float deltaTime)
 		return false;
 	}
 
-	if (m_isMoved)
+	if (m_isMoving)
 	{
 		RecalculateView();
 	}
-	return m_isMoved;
+	return m_isMoving;
 }
 
 float Camera::GetRotationSpeed()
@@ -238,6 +242,61 @@ void Camera::SetPosition(glm::vec3& pos)
 {
 	m_Position = pos;
 	RecalculateView();
+}
+
+void printMat4(const glm::mat4& matrix) {
+	for (int i = 0; i < 4; ++i) {
+		for (int j = 0; j < 4; ++j) {
+			std::cout << matrix[i][j] << " ";
+		}
+		std::cout << std::endl;
+	}
+}
+void printVec4(const glm::vec4& vector) 
+{
+	std::cout << "(" << vector.x << ", " << vector.y << ", " << vector.z << ", " << vector.w << ")" << std::endl;
+}
+// Simple 4x4 matrix multiplication function
+void matrixVectorMultiply(const float matrix[16], const float vector[4], float result[4]) {
+	for (int i = 0; i < 4; ++i) {
+		result[i] = 0.0f;
+		for (int j = 0; j < 4; ++j) {
+			result[i] += matrix[i * 4 + j] * vector[j];
+		}
+	}
+}
+void mat4ToArray(const glm::mat4& matrix, float array[16]) {
+	// Use glm::value_ptr to get the raw array representation of the matrix
+	const float* ptr = glm::value_ptr(matrix);
+
+	// Copy the values to the destination array
+	for (int i = 0; i < 16; ++i) {
+		array[i] = ptr[i];
+	}
+}
+glm::vec2 Camera::ConvertCameraPosToPixel(GLFWwindow* window) 
+{
+	glm::mat4 modelMatrix(1.0f);
+	glm::mat4 mvpMatrix = m_Projection * m_View * modelMatrix;
+
+	float matrix_MVP[16];
+	mat4ToArray(mvpMatrix, matrix_MVP);
+	float pos[4] = { m_Position.x, m_Position.y, m_Position.z, 1.0f };
+	float result[4];
+	matrixVectorMultiply(matrix_MVP, pos, result);
+	glm::vec4 clipSpacePosition(result[0], result[1], result[2], result[3]);
+
+	// Perspective divide to get normalized device coordinates (NDC)
+	glm::vec3 ndcPosition = glm::vec3(clipSpacePosition) / clipSpacePosition.w;
+
+	// Map NDC coordinates to pixel coordinates
+	glm::vec2 pixelCoordinates;
+	int viewportWidth, viewportHeight;
+	glfwGetFramebufferSize(window, &viewportWidth, &viewportHeight);
+	pixelCoordinates.x = 0.5f * (ndcPosition.x + 1.0f) * viewportWidth;
+	pixelCoordinates.y = 0.5f * (1.0f - ndcPosition.y) * viewportHeight;
+
+	return pixelCoordinates;
 }
 
 

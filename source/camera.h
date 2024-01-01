@@ -29,7 +29,7 @@ enum class TypeCameraView
 // Default camera values
 const float YAW         = -90.0f;
 const float PITCH       =  0.0f;
-const float TRANSLATION_SPEED =  200.0f;
+const float TRANSLATION_SPEED =  250.0f;
 const float ROTATION_SPEED = 0.8f;
 const float ZOOM        =  45.0f;
 
@@ -58,10 +58,14 @@ public:
 	void SetPosition(glm::vec3&& pos);
 	void SetPosition(glm::vec3& pos);
 
+	glm::vec2 ConvertCameraPosToPixel(GLFWwindow* window);
+
 	int GetViewPortWidth() { return m_ViewportWidth; };
 	int GetViewPortHeight() { return m_ViewportHeight; };
 
 	TypeCameraView m_typeView = TypeCameraView::FirstPerson;
+
+	inline bool isMoving() { return m_isMoving; }
 
 private:
 	void RecalculateProjection();
@@ -89,7 +93,7 @@ private:
 
 	bool m_isWireFrame = false;
 
-	bool m_isMoved = false;
+	bool m_isMoving = false;
 
 	bool m_isOnGroundMoving = false;
 };

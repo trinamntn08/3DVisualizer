@@ -3,39 +3,41 @@
 #include"Logger.h"
 #include"PhysicsEngine/RigidBody.h"
 #include"Logger.h"
+#include"Timer.h"
 
-unsigned int nbrPatchesTess = 50;
+unsigned int nbrPatchesTess = 20;
 
-BaseTerrain::BaseTerrain(glm::vec3 scale):m_scale(scale)
+Terrain::Terrain(glm::vec3 scale):m_scale(scale)
 { 
 	m_rigidbody = new RigidBody();
-	InitTerrainTesselation();
+	//InitTerrainTesselation();
+	InitTerrain();
 	ComputeBoundingBox();
 }
 
-BaseTerrain::~BaseTerrain()
+Terrain::~Terrain()
 {
 }
 
-void BaseTerrain::UpdatePhysics(glm::vec3 gravity, float timeStep)
+void Terrain::UpdatePhysics(glm::vec3 gravity, float timeStep)
 {
 	m_rigidbody->UpdatePhysics(gravity, timeStep);
 }
 
 
-void BaseTerrain::Render(Shader& shader)
+void Terrain::Render(Shader& shader)
 {
 	shader.activate();
 	m_terrain->Render(shader);
 }
 
-void BaseTerrain::RenderTesselation(Shader& shader)
+void Terrain::RenderTesselation(Shader& shader)
 {
-	//shader.activate();
+	shader.activate();
 	m_terrain->RenderTesselation(shader);
 }
 
-void BaseTerrain::InitTerrain()
+void Terrain::InitTerrain()
 {
 	// Initialize vertices
 	 std::vector<Vertex> vertices = InitVerticesWithHeightMapFromFile(heightMapFile.c_str(), m_width, m_depth);
@@ -81,16 +83,16 @@ void BaseTerrain::InitTerrain()
 
 	// textures
 	std::vector<Texture> textures_terrain;
+	
+	//Texture sand = LoadTerrainTextures("gTextureHeight0", path_terrain_texture + "rdiffuse.jpg");
+	//Texture grass = LoadTerrainTextures("gTextureHeight1", path_terrain_texture + "sand.jpg");
+	//Texture rdiffuse = LoadTerrainTextures("gTextureHeight2", path_terrain_texture + "snow.jpg");
+	//Texture snow = LoadTerrainTextures("gTextureHeight3", path_terrain_texture + "terrainTexture.jpg");
 
-	Texture sand = LoadTerrainTextures("gTextureHeight0", path_terrain_texture + "rdiffuse.jpg");
-	Texture grass = LoadTerrainTextures("gTextureHeight1", path_terrain_texture + "sand.jpg");
-	Texture rdiffuse = LoadTerrainTextures("gTextureHeight2", path_terrain_texture + "snow.jpg");
-	Texture snow = LoadTerrainTextures("gTextureHeight3", path_terrain_texture + "terrainTexture.jpg");
-	//Texture rnormal = LoadTerrainTextures("rnormal", path_terrain_texture + "rnormal.jpg");
-	//Texture terrainTexture = LoadTerrainTextures("terrainTexture", path_terrain_texture + "terrainTexture.jpg");
-//	Texture SamplerTerrain = LoadTerrainTextures("SamplerTerrain", path_terrain_texture + "terrain_surface.png");
-//	Texture SamplerTerrain = LoadTerrainTextures("SamplerTerrain", path_terrain_texture + "terrain_surface.png");
-	//	Texture SamplerTerrain;
+	Texture sand = LoadTerrainTextures("gTextureHeight0", path_terrain_texture + "RuggedTerrain.png");
+	Texture grass = LoadTerrainTextures("gTextureHeight1", path_terrain_texture + "RuggedTerrain.png");
+	Texture rdiffuse = LoadTerrainTextures("gTextureHeight2", path_terrain_texture + "RuggedTerrain.png");
+	Texture snow = LoadTerrainTextures("gTextureHeight3", path_terrain_texture + "RuggedTerrain.png");
 
 	textures_terrain.push_back(sand);
 	textures_terrain.push_back(grass);
@@ -100,16 +102,17 @@ void BaseTerrain::InitTerrain()
 	//textures_terrain.push_back(terrainTexture);
 //	textures_terrain.push_back(SamplerTerrain);
 
+	
 	m_terrain = std::make_unique<Mesh>(vertices, indices, textures_terrain);
 }
-void BaseTerrain::InitTerrainTesselation()
+void Terrain::InitTerrainTesselation()
 {
 	// Initialize vertices
-	std::vector<Vertex> vertices = InitVerticesTessWithHeightMapTexture(heightMapFile.c_str(), m_width, m_depth);
+	std::vector<Vertex> vertices = InitVerticesTessWithHeightMapTexture("source/resources/RockyLandRivers/Heightmap.png", m_width, m_depth);
 
 	// textures
 	std::vector<Texture> textures_terrain;
-
+/*
 	Texture sand = LoadTerrainTextures("gTextureHeight0", path_terrain_texture + "rdiffuse.jpg");
 	Texture grass = LoadTerrainTextures("gTextureHeight1", path_terrain_texture + "sand.jpg");
 	Texture rdiffuse = LoadTerrainTextures("gTextureHeight2", path_terrain_texture + "snow.jpg");
@@ -120,11 +123,23 @@ void BaseTerrain::InitTerrainTesselation()
 	textures_terrain.push_back(rdiffuse);
 	textures_terrain.push_back(snow);
 	textures_terrain.push_back(heightMap);
+*/
+
+	Texture sand = LoadTerrainTextures("gTextureHeight0", path_terrain_texture + "RuggedTerrain.png");
+	Texture grass = LoadTerrainTextures("gTextureHeight1", path_terrain_texture + "RuggedTerrain.png");
+	Texture rdiffuse = LoadTerrainTextures("gTextureHeight2", path_terrain_texture + "RuggedTerrain.png");
+	Texture snow = LoadTerrainTextures("gTextureHeight3", path_terrain_texture + "RuggedTerrain.png");
+	Texture heightMap = LoadTerrainTextures("heightMap", "source/resources/RockyLandRivers/HeightMap.png");
+	textures_terrain.push_back(sand);
+	textures_terrain.push_back(grass);
+	textures_terrain.push_back(rdiffuse);
+	textures_terrain.push_back(snow);
+	textures_terrain.push_back(heightMap);
 
 	m_terrain = std::make_unique<Mesh>(vertices, textures_terrain,1);
 }
 
-Texture BaseTerrain::LoadTerrainTextures(std::string name_texture,std::string pathFile_texture)
+Texture Terrain::LoadTerrainTextures(std::string name_texture,std::string pathFile_texture)
 {
 	Texture texture_loaded;
 	unsigned int textureID;
@@ -136,13 +151,17 @@ Texture BaseTerrain::LoadTerrainTextures(std::string name_texture,std::string pa
 	{
 		GLenum format;
 		if (nrComponents == 1)
+		{
 			format = GL_RED;
+		}
 		else if (nrComponents == 3)
+		{
 			format = GL_RGB;
+		}
 		else if (nrComponents == 4)
 			format = GL_RGBA;
 
-
+		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 		glBindTexture(GL_TEXTURE_2D, textureID);
 		glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
 		glGenerateMipmap(GL_TEXTURE_2D);
@@ -164,47 +183,9 @@ Texture BaseTerrain::LoadTerrainTextures(std::string name_texture,std::string pa
 	texture_loaded.path = pathFile_texture.c_str();
 
 	return texture_loaded;
-
-	/*
-	// Load the skybox texture
-	for (int i = 0; i < 6; i++)
-	{
-		int width, height, nrChannels;
-		unsigned char* data = stbi_load(textures_terrain[i].c_str(), &width, &height, &nrChannels, 0);
-		if (data)
-		{
-			GLenum format;
-			if (nrChannels == 1)
-				format = GL_RED;
-			else if (nrChannels == 3)
-				format = GL_RGB;
-			else if (nrChannels == 4)
-				format = GL_RGBA;
-
-
-			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
-				0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data
-			);
-			if (glGetError())
-			{
-				std::cout << "Texture images loaded failed" << std::endl;
-			}
-
-			stbi_image_free(data);
-		}
-		else
-		{
-			std::cout << "STBI failed to load skyBox texture: " << textures_faces[i] << std::endl;
-			stbi_image_free(data);
-		}
-	}
-	textures_loaded.push_back(Texture(textureID, "skyBox", textures_faces[0]));
-
-	return textures_loaded;
-	*/
 }
 
-std::vector<Vertex> BaseTerrain::InitVerticesWithHeightMapFromFile(const char* imagePath, unsigned int&width, unsigned int& height)
+std::vector<Vertex> Terrain::InitVerticesWithHeightMapFromFile(const char* imagePath, unsigned int&width, unsigned int& height)
 {
 	// Initialize vertices
 	std::vector<Vertex> vertices;
@@ -217,7 +198,7 @@ std::vector<Vertex> BaseTerrain::InitVerticesWithHeightMapFromFile(const char* i
 		return {};
 	}
 	
-	static float yScale = 64.0f / 256.0f, yShift = 10.0f;  // apply a scale+shift to the height data
+	static float yScale = 128.0f / 256.0f, yShift = 16.0f;  // apply a scale+shift to the height data
 	
 	if (nChannels == 1 || nChannels == 3 || nChannels == 4) //RGB || RGBA
 	{
@@ -231,8 +212,8 @@ std::vector<Vertex> BaseTerrain::InitVerticesWithHeightMapFromFile(const char* i
 				// raw height at coordinate
 				unsigned char h = texel[0];
 
-				float x = -(int)height / 2.0f + i;
-				float z = -(int)width / 2.0f + j;
+				float x = -(int)width / 2.0f + j;
+				float z = -(int)height / 2.0f + i;
 				float y = (int)h * yScale - yShift;
 				//	float y = 1.0f;
 				Vertex vertex;
@@ -248,15 +229,14 @@ std::vector<Vertex> BaseTerrain::InitVerticesWithHeightMapFromFile(const char* i
 
 				vertices.push_back(vertex);
 
-				height_width.push_back(y);
+				m_heightMap.push_back(y);
 			}
-		//	m_heightMap.push_back(height_width);
 		}
 	}
 	stbi_image_free(data);
 	return vertices;
 }
-std::vector<Vertex> BaseTerrain::InitVerticesTessWithHeightMapTexture(const char* heightMapFilePath, 
+std::vector<Vertex> Terrain::InitVerticesTessWithHeightMapTexture(const char* heightMapFilePath, 
 																	  unsigned int& width, unsigned int& height)
 {
 	int pwidth, pheight, nbrComponents;
@@ -325,7 +305,7 @@ std::vector<Vertex> BaseTerrain::InitVerticesTessWithHeightMapTexture(const char
 	return vertices;
 }
 
-void BaseTerrain::CalculateNormals(std::vector<Vertex>& Vertices, std::vector<unsigned int>& Indices)
+void Terrain::CalculateNormals(std::vector<Vertex>& Vertices, std::vector<unsigned int>& Indices)
 {
 	unsigned int Index = 0;
 
@@ -350,7 +330,7 @@ void BaseTerrain::CalculateNormals(std::vector<Vertex>& Vertices, std::vector<un
 		Vertices[i].Normal = glm::normalize(Vertices[i].Normal);
 	}
 }
-void BaseTerrain::SetPosition(const glm::vec3& newPosition)
+void Terrain::SetPosition(const glm::vec3& newPosition)
 {
 	glm::vec3 pos = GetPosition();
 	glm::vec3 deltaPos = newPosition - pos;
@@ -358,7 +338,7 @@ void BaseTerrain::SetPosition(const glm::vec3& newPosition)
 	UpdateBoundingBox(deltaPos);
 }
 
-void BaseTerrain::ComputeBoundingBox()
+void Terrain::ComputeBoundingBox()
 {
 	if (!m_terrain)
 	{
@@ -389,25 +369,51 @@ void BaseTerrain::ComputeBoundingBox()
 	m_bbox.setMaxBound(maxBound_temp);
 }
 
-void BaseTerrain::UpdateBoundingBox(glm::vec3 deltaPos)
+void Terrain::UpdateBoundingBox(glm::vec3 deltaPos)
 {
 	m_bbox.Move(deltaPos);
 }
 
 
-float BaseTerrain::GetHeightForPos(float x, float z)
+float Terrain::GetHeightForPos(float x1, float z1)
 {
-	float pos_x = x ;
-	float pos_z = z ;
+	Timer timer("GetHeightForPos");
+	float x = x1;
+	float z = z1;
 
 	// Apply the same translation as in the heightmap creation code
-	pos_x += ((int)m_width / 2.0f);
-	pos_z += ((int)m_depth / 2.0f);
+	x += ((int)m_width / 2.0f);
+	z += ((int)m_depth / 2.0f);
 
-	return GetHeightInterpolated(pos_x, pos_z);
+	if (x < 0.0f || x >= m_width - 1 || z < 0.0f || z >= m_depth - 1)
+	{
+		return 0.0f;
+	}
+
+	// Convert (x, z) coordinates to integer indices
+	int xIndex = static_cast<int>(x);
+	int zIndex = static_cast<int>(z);
+
+	// Calculate the fractional parts for interpolation
+	float xFraction = x - xIndex;
+	float zFraction = z - zIndex;
+
+	// Perform bilinear interpolation
+	float height00 = m_heightMap[zIndex * m_width + xIndex];
+	float height01 = m_heightMap[zIndex * m_width + (xIndex + 1)];
+	float height10 = m_heightMap[(zIndex + 1) * m_width + xIndex];
+	float height11 = m_heightMap[(zIndex + 1) * m_width + (xIndex + 1)];
+
+	float interpolatedHeightTop = glm::mix(height00, height01, xFraction);
+	float interpolatedHeightBottom = glm::mix(height10, height11, xFraction);
+
+	return glm::mix(interpolatedHeightTop, interpolatedHeightBottom, zFraction);
+
+//	return GetHeightInterpolated(pos_x, pos_z);
 }
-float BaseTerrain::GetHeightInterpolated(float x, float z)
+float Terrain::GetHeightInterpolated(float x, float z)
 {
+	Timer timer("GetHeightInterpolated");
 	// Ensure x and z are within valid bounds
 	if (x < 0.0f || x >= m_width - 1 || z < 0.0f || z >= m_depth - 1)
 	{
@@ -434,8 +440,9 @@ float BaseTerrain::GetHeightInterpolated(float x, float z)
 	return glm::mix(interpolatedHeightTop, interpolatedHeightBottom, zFraction);
 }
 
-glm::vec3 BaseTerrain::ConstrainCameraPosToTerrain(glm::vec3 camPos)
+glm::vec3 Terrain::ConstrainCameraPosToTerrain(glm::vec3 camPos)
 {
+	Timer timer("ConstrainCameraPosToTerrain");
 	glm::vec3 newCameraPos = camPos;
 
 	// Make sure camera doesn't go outside of the terrain bounds
@@ -464,7 +471,7 @@ glm::vec3 BaseTerrain::ConstrainCameraPosToTerrain(glm::vec3 camPos)
 	// Add an offset to simulate walking height
 	static float walkingHeightOffset = 10.0f;
 	newCameraPos.y += walkingHeightOffset;
-	Log::info("y pos:" + std::to_string(newCameraPos.y));
+	Log::info("x,y,z pos:" + std::to_string(newCameraPos.x) +" " + std::to_string(newCameraPos.y) + " " + std::to_string(newCameraPos.z));
 
 	// Apply smoothed oscillation to simulate walking motion
 	//float oscillationFactor = 1.0f;

@@ -4,6 +4,8 @@
 #include"Camera.h"
 #include"model.h"
 
+
+
 struct TerrainParameters 
 {
 	int octaves;
@@ -37,18 +39,21 @@ class Terrain2
 {
 public:
 
-	Terrain2(int gl=120);
+	Terrain2(int gl=100);
 	~Terrain2() {};
 
+	// Function to initialize per-patch terrain mesh
+	std::unique_ptr<Mesh> InitializePatchTerrainMesh();
 
 	std::vector<Texture> LoadAllTerrainTextures(std::string path_terrain_textures);
 	Texture LoadTerrainTextures(std::string name_texture, std::string pathFile_texture);
 	
 	void Render(Shader shader_terrain2, const std::unique_ptr<Camera>& camera);
-	void setGui();
+	void SetGui();
 
+	void GenerateTilesGrid(glm::vec2 offset);
 	void updateTilesPositions();
-	void setPositionsArray(std::vector<glm::vec2> & pos);
+	void SetTilePositionsBuffer(std::vector<glm::vec2> & pos);
 
 	glm::vec2 position, eps;
 	float up = 0.0;
@@ -79,11 +84,11 @@ public:
 
 	void drawVertices(int nInstances);
 
-	inline void setPos(int row, int col, glm::vec2 pos) { positionVec[col + row * gridLength] = pos;}
+	inline void setPos(int row, int col, glm::vec2 pos) { listTilePositions[col + row * gridLength] = pos;}
 
-	inline glm::vec2 getPos(int row, int col){return positionVec[col + row * gridLength];}
+	inline glm::vec2 getPos(int row, int col){return listTilePositions[col + row * gridLength];}
 
-	void generateTileGrid(glm::vec2 offset);
+
 	bool getWhichTileCameraIs(glm::vec2& result);
 
 	void getColRow(int i, int& col, int& row);
@@ -93,8 +98,8 @@ public:
 private:
 
 	TerrainParameters m_terrainParams;
-	std::unique_ptr<Mesh> m_terrain2 = nullptr;
-	std::vector<glm::vec2> positionVec;
+	std::unique_ptr<Mesh> m_patchTerrainMesh = nullptr;
+	std::vector<glm::vec2> listTilePositions;
 
 	int cellsCount; //nbr of cells per patch
 	float cellWidth; 
@@ -105,9 +110,10 @@ private:
 
 	glm::vec3 seed;
 
-	unsigned int posBuffer;
+	unsigned int posBuffer=0;
 
 	glm::mat4 modelMatrix;
+
 
 
 };

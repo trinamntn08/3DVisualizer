@@ -82,45 +82,8 @@ float InterpolatedNoise(vec2 xy) {
 
 }
 
-/**
-float perlin(float x, float y){
-	
-    int numOctaves = octaves;
-	float persistence = 0.5;
-	float total = 0,
-		frequency = 0.005*freq,
-		amplitude = gDispFactor;
-	for (int i = 0; i < numOctaves; ++i) {
-		frequency *= 2;
-		amplitude *= persistence;
-		
-		total += InterpolatedNoise( vec2(x,y)*frequency) * amplitude;
-	}
-	return total*total*total;
-} **/
-
 const mat2 m = mat2(0.8,-0.6,0.6,0.8);
 
-/**
-float perlin(float x, float y){
-    
-	vec2 st = vec2(x,y);
-    //st *= freq;
-    
-    //int numOctaves = 10;
-	float persistence = 0.5;
-	float total = 0.0,
-		frequency = 0.25,
-		amplitude = gDispFactor;
-	for (int i = 0; i < octaves; ++i) {
-		frequency *= 2.0;
-		amplitude *= persistence;
-        st = frequency*m*st;
-		total += InterpolatedNoise(st) * amplitude;
-	}
-	return total;
-}
-**/
 
 float smoothstepd(float x){
  	return 6.0*x*(1.0 - x);   

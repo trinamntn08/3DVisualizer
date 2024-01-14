@@ -1,19 +1,19 @@
 #version 410 core                                                                               
                                                                                                 
 // define the number of CPs in the output patch                                                 
-layout (vertices = 3) out;                                                                      
-                                                                                                
-uniform vec3 gEyeWorldPos;
-uniform float tessLevel;
-uniform float tessMultiplier;
-					   
-uniform vec3 seed;
+layout (vertices = 3) out;  
 
 // attributes of the input CPs                                                                  
 in vec3 WorldPos_CS_in[];                                                                       
 in vec2 TexCoord_CS_in[];                                                                       
-in vec3 Normal_CS_in[];                                                                         
-                                                                                                
+in vec3 Normal_CS_in[];    
+
+uniform vec3 camPos;
+uniform float tessLevel;
+uniform float tessMultiplier;
+					   
+uniform vec3 seed;
+                                                                                                                                                               
 // attributes of the output CPs                                                                 
 out vec3 WorldPos_ES_in[];                                                                      
 out vec2 TexCoord_ES_in[];                                                                      
@@ -137,16 +137,16 @@ void main()
     WorldPos_ES_in[gl_InvocationID] = WorldPos_CS_in[gl_InvocationID];                          
                                                                                                 
     // Calculate the distance from the camera to the three control points                       
-    //vec3 pos = vec3(gEyeWorldPos.x, perlin(gEyeWorldPos.xz), gEyeWorldPos.z);
+    //vec3 pos = vec3(camPos.x, perlin(camPos.xz), camPos.z);
 
 	vec3 WorldPos1 = vec3(WorldPos_ES_in[0].x, perlin(WorldPos_ES_in[0].xz), WorldPos_ES_in[0].z);
 	vec3 WorldPos2 = vec3(WorldPos_ES_in[1].x, perlin(WorldPos_ES_in[1].xz), WorldPos_ES_in[1].z);
 	vec3 WorldPos3 = vec3(WorldPos_ES_in[2].x, perlin(WorldPos_ES_in[2].xz), WorldPos_ES_in[2].z);
 
 
-	float EyeToVertexDistance0 = distance(gEyeWorldPos, WorldPos1);                     
-    float EyeToVertexDistance1 = distance(gEyeWorldPos, WorldPos2);                
-    float EyeToVertexDistance2 = distance(gEyeWorldPos, WorldPos3);                      
+	float EyeToVertexDistance0 = distance(camPos, WorldPos1);                     
+    float EyeToVertexDistance1 = distance(camPos, WorldPos2);                
+    float EyeToVertexDistance2 = distance(camPos, WorldPos3);                      
                                                                                                 
     // Calculate the tessellation levels                                                        
     gl_TessLevelOuter[0] = tessMultiplier*GetTessLevel(EyeToVertexDistance1, EyeToVertexDistance2);            

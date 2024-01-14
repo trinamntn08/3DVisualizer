@@ -7,31 +7,32 @@
 
 Terrain2::Terrain2(int gl)
 {
-	//glm::mat4 id;
-	//glm::mat4 scaleMatrix = glm::scale(id, glm::vec3(1.0, 0.0, 1.0));
-	//glm::mat4 positionMatrix = glm::translate(id, glm::vec3(0., 0.0, 0.));
-	//modelMatrix = positionMatrix;
-
-	//posBuffer = 0;
-
 	seed = genRandomVec3();
 
-	this->gridLength = gl + (gl + 1) % 2; //ensure gridLength is odd
+	m_patchTerrainMesh = std::move(InitializePatchTerrainMesh());
 
+	gridLength = gl + (gl + 1) ; //ensure gridLength is odd
+	GenerateTilesGrid(glm::vec2(0.0, 0.0));
+	SetTilePositionsBuffer(listTilePositions);
+
+}
+
+std::unique_ptr<Mesh> Terrain2::InitializePatchTerrainMesh()
+{
 	//Vertices
 	std::vector<Vertex> vertices;
 
-	cellsCount  = 3;
+	cellsCount = 4;
 	cellWidth = 10. * 100.0f;
-	for (int i = 0; i < cellsCount ; i++)
+	for (int i = 0; i < cellsCount; i++)
 	{
-		for (int j = 0; j < cellsCount ; j++)
+		for (int j = 0; j < cellsCount; j++)
 		{
 			Vertex vertex;
 			//add position
-			float x = j * cellWidth / (cellsCount  - 1) - cellWidth / 2.0;
+			float x = j * cellWidth / (cellsCount - 1) - cellWidth / 2.0;
 			float y = 0.0;
-			float z = -i * cellWidth / (cellsCount  - 1) + cellWidth / 2.0;
+			float z = -i * cellWidth / (cellsCount - 1) + cellWidth / 2.0;
 
 			vertex.Position = glm::vec3(x, y, z);
 
@@ -42,45 +43,45 @@ Terrain2::Terrain2(int gl)
 			vertex.Normal = glm::vec3(x_n, y_n, z_n);
 
 			//add texcoords
-			vertex.TexCoords = glm::vec2((float)j / (cellsCount  - 1), (float)(cellsCount  - i - 1) / (cellsCount  - 1));
-			
+			vertex.TexCoords = glm::vec2((float)j / (cellsCount - 1), (float)(cellsCount - i - 1) / (cellsCount - 1));
+
 			// vertex a_Position
 		//	vertex.a_Postion = glm::vec2(positionVec[i + j * res]);
-			
+
 			vertices.push_back(vertex);
 		}
 	}
 
 	//Indices
-	const int totalTriangles = (cellsCount  - 1) * (cellsCount  - 1) * 2;
-	std::vector<unsigned int> indices(totalTriangles * 3,0);
+	const int totalTriangles = (cellsCount - 1) * (cellsCount - 1) * 2;
+	std::vector<unsigned int> indices(totalTriangles * 3, 0);
 
-	for (int i = 0; i < totalTriangles; i++) 
+	for (int i = 0; i < totalTriangles; i++)
 	{
-		int trianglesPerRow = 2 * (cellsCount  - 1);
+		int trianglesPerRow = 2 * (cellsCount - 1);
 		for (int j = 0; j < trianglesPerRow; j++)
 		{
 			if (!(i % 2)) //upper triangle
-			{ 
-				int k = i * 3;
-				int triangleIndex = i % trianglesPerRow;
-
-				int row = i / trianglesPerRow;
-				int col = triangleIndex / 2;
-				indices[k] = row * cellsCount  + col;
-				indices[k + 1] = ++row * cellsCount  + col;
-				indices[k + 2] = --row * cellsCount  + ++col;
-			}
-			else 
 			{
 				int k = i * 3;
 				int triangleIndex = i % trianglesPerRow;
 
 				int row = i / trianglesPerRow;
 				int col = triangleIndex / 2;
-				indices[k] = row * cellsCount  + ++col;
-				indices[k + 1] = ++row * cellsCount  + --col;
-				indices[k + 2] = row * cellsCount  + ++col;
+				indices[k] = row * cellsCount + col;
+				indices[k + 1] = (row + 1) * cellsCount + col;
+				indices[k + 2] = row * cellsCount + (col + 1);
+			}
+			else
+			{
+				int k = i * 3;
+				int triangleIndex = i % trianglesPerRow;
+
+				int row = i / trianglesPerRow;
+				int col = triangleIndex / 2;
+				indices[k] = row * cellsCount + (col + 1);
+				indices[k + 1] = (row + 1) * cellsCount + col;
+				indices[k + 2] = (row + 1) * cellsCount + col + 1;
 			}
 		}
 	}
@@ -88,19 +89,16 @@ Terrain2::Terrain2(int gl)
 	static std::string path_terrain_textures = "source/resources/terrain/";
 	std::vector<Texture> textures_terrain = LoadAllTerrainTextures(path_terrain_textures);
 
-	m_terrain2 = std::make_unique<Mesh>(vertices, indices, textures_terrain);
-	positionVec.resize(gridLength * gridLength);
-	generateTileGrid(glm::vec2(0.0, 0.0));
-	setPositionsArray(positionVec);
-
+	return std::make_unique<Mesh>(vertices, indices, textures_terrain);
 }
+
 std::vector<Texture> Terrain2::LoadAllTerrainTextures(std::string path_terrain_textures)
 {
 	std::vector<Texture> textures_terrain;
 	Texture sand = LoadTerrainTextures("sand", path_terrain_textures + "sand.jpg");
 	Texture grass = LoadTerrainTextures("grass", path_terrain_textures + "grass.jpg");
 	Texture rdiffuse = LoadTerrainTextures("rock", path_terrain_textures + "rdiffuse.jpg");
-	Texture snow = LoadTerrainTextures("snow", path_terrain_textures + "snow2.jpg");
+	Texture snow = LoadTerrainTextures("snow", path_terrain_textures + "snow.jpg");
 	Texture rnormal = LoadTerrainTextures("rockNormal", path_terrain_textures + "rnormal.jpg");
 	Texture terrain = LoadTerrainTextures("grass1", path_terrain_textures + "terrainTexture.jpg");
 
@@ -157,6 +155,53 @@ Texture Terrain2::LoadTerrainTextures(std::string name_texture, std::string path
 
 	return texture_loaded;
 }
+
+
+void Terrain2::GenerateTilesGrid(glm::vec2 offset)
+{
+	listTilePositions.resize(gridLength * gridLength);
+
+	glm::vec2 cellWidth_x = glm::vec2(1, 0)* cellWidth;
+	glm::vec2 cellWidth_y = glm::vec2(0, 1)* cellWidth;
+
+	for (int indexRow = 0; indexRow < gridLength; indexRow++)
+	{
+		for (int indexCol = 0; indexCol < gridLength; indexCol++)
+		{
+			glm::vec2 pos = (float)(indexCol - gridLength / 2)*glm::vec2(cellWidth_x) + (float)(indexRow - gridLength / 2)*glm::vec2(cellWidth_y);
+			setPos(indexRow, indexCol, pos + offset);
+		}
+	}
+}
+
+void Terrain2::SetTilePositionsBuffer(std::vector<glm::vec2>& pos)
+{
+	if (posBuffer) 
+	{
+		this->deleteBuffer();
+	}
+
+	// vertex Buffer Object
+	glGenBuffers(1, &posBuffer);
+	glBindBuffer(GL_ARRAY_BUFFER, posBuffer);
+	glBufferData(GL_ARRAY_BUFFER, pos.size() * sizeof(glm::vec2), &pos[0], GL_STATIC_DRAW);
+
+	glBindVertexArray(m_patchTerrainMesh->VAO);
+	glEnableVertexAttribArray(7);
+	glVertexAttribPointer(7, 2, GL_FLOAT, GL_FALSE, sizeof(glm::vec2), (void*)0);
+
+	glVertexAttribDivisor(7, 1);
+	glBindVertexArray(0);
+	GLenum err;
+	while ((err = glGetError()) != GL_NO_ERROR) {
+		std::cerr << "setPositionsArray: OpenGL error: " << err << std::endl;
+	}
+}
+
+void Terrain2::deleteBuffer(){
+	glDeleteBuffers(1, &posBuffer);
+	posBuffer = 0;
+}
 void Terrain2::Render(Shader shader, const std::unique_ptr<Camera>& camera)
 {
 	glEnable(GL_CLIP_DISTANCE0);
@@ -165,9 +210,10 @@ void Terrain2::Render(Shader shader, const std::unique_ptr<Camera>& camera)
 	glm::mat4 view = camera->GetViewMatrix();
 	glm::mat4 projection = camera->GetProjectionMatrix();
 
-	shader.setVec3("gEyeWorldPos", camera->GetPosition());
-	shader.setMat4("gWorld", model);
-	shader.setMat4("gVP", projection * view);
+	shader.setVec3("camPos", camera->GetPosition());
+	shader.setMat4("model", model);
+	shader.setMat4("view", view);
+	shader.setMat4("projection", projection);
 	shader.setFloat("gDispFactor", m_terrainParams.dispFactor);
 
 	//	float waterHeight = (waterPtr ? waterPtr.getModelMatrix()[3][1] : 100.0);
@@ -194,19 +240,17 @@ void Terrain2::Render(Shader shader, const std::unique_ptr<Camera>& camera)
 	shader.setFloat("waterHeight", waterHeight);
 	shader.setFloat("tessMultiplier", m_terrainParams.tessMultiplier);
 	shader.setFloat("fogFalloff", m_terrainParams.fogFalloff * 1.e-6);
-
-	m_terrainParams.power = 3.0;
 	shader.setFloat("power", m_terrainParams.power);
 
 	shader.setBool("normals", true);
 	shader.setBool("drawFog", m_terrainParams.drawFog);
 
 
-	int nInstances = positionVec.size();
-	m_terrain2->RenderTerrain(shader, cellsCount , nInstances);
+	int nbrInstances = listTilePositions.size();
+	m_patchTerrainMesh->RenderTerrain(shader, cellsCount, nbrInstances);
 	glDisable(GL_CLIP_DISTANCE0);
 }
-void Terrain2::setGui()
+void Terrain2::SetGui()
 {
 	ImGui::Begin("Terrain controls: ");
 	ImGui::SliderInt("Octaves", &m_terrainParams.octaves, 1, 20);
@@ -219,52 +263,6 @@ void Terrain2::setGui()
 	ImGui::ColorEdit3("Rock color", (float*)&m_terrainParams.rockColor[0]); // Edit 3 floats representing a color
 	ImGui::End();
 }
-void Terrain2::generateTileGrid(glm::vec2 offset)
-{
-	float sc = cellWidth;
-
-	glm::vec2 I = glm::vec2(1, 0)*sc;
-	glm::vec2 J = glm::vec2(0, 1)*sc;
-
-	for (int i = 0; i < gridLength; i++) 
-	{
-		for (int j = 0; j < gridLength; j++) 
-		{
-			glm::vec2 pos = (float)(j - gridLength / 2)*glm::vec2(I) + (float)(i - gridLength / 2)*glm::vec2(J);
-			setPos(i, j, pos + offset);
-		}
-	}
-}
-
-void Terrain2::setPositionsArray(std::vector<glm::vec2>& pos)
-{
-	if (posBuffer) 
-	{
-		this->deleteBuffer();
-	}
-
-	// vertex Buffer Object
-	glGenBuffers(1, &posBuffer);
-	glBindBuffer(GL_ARRAY_BUFFER, posBuffer);
-	glBufferData(GL_ARRAY_BUFFER, pos.size() * sizeof(glm::vec2), &pos[0], GL_STATIC_DRAW);
-
-	glBindVertexArray(m_terrain2->VAO);
-	glEnableVertexAttribArray(7);
-	glVertexAttribPointer(7, 2, GL_FLOAT, GL_FALSE, sizeof(glm::vec2), (void*)0);
-
-	glVertexAttribDivisor(7, 1);
-	glBindVertexArray(0);
-	GLenum err;
-	while ((err = glGetError()) != GL_NO_ERROR) {
-		std::cerr << "OpenGL error: " << err << std::endl;
-	}
-}
-
-void Terrain2::deleteBuffer(){
-	glDeleteBuffers(1, &posBuffer);
-	posBuffer = 0;
-}
-
 bool Terrain2::getWhichTileCameraIs(glm::vec2& result) {
 
 	//for (glm::vec2 p : positionVec) {

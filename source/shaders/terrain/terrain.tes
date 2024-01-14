@@ -4,12 +4,14 @@
 
 layout(triangles, equal_spacing, ccw) in;                                                       
                                                                                                 
-uniform mat4 gVP;                                                                               
+uniform mat4 view;     
+uniform mat4 projection; 
+
 uniform float gDispFactor;      
 uniform float freq;
 uniform int octaves;
 
-uniform vec3 gEyeWorldPos;  
+uniform vec3 camPos;  
 uniform vec3 seed;
 uniform vec4 clipPlane;
 					   
@@ -158,9 +160,9 @@ void main()
 	
 	gl_ClipDistance[0] = dot(clipPlane, vec4(WorldPos, 1.0));
 
-	distFromPos = distance(WorldPos, gEyeWorldPos);
+	distFromPos = distance(WorldPos, camPos);
 	dispFactor = gDispFactor;
 	height = WorldPos.y;
 
-    gl_Position = gVP * vec4(WorldPos, 1.0);                                              
+    gl_Position = projection * view * vec4(WorldPos, 1.0);                                              
 }                                                                                               

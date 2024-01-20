@@ -3,7 +3,7 @@
 #include <imgui.h>
 #include <imgui_impl_opengl3.h>
 #include <imgui_impl_glfw.h>
-#include"utils.h"
+#include"../utils.h"
 
 Terrain2::Terrain2(int gl)
 {

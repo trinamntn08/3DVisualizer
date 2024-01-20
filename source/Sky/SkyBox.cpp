@@ -1,7 +1,7 @@
 #include"SkyBox.h"
-#include"stb_image.h"
+#include"..\stb_image.h"
 
-void Skybox::init()
+void Skybox::InitSkyBox()
 {
     // cube vertices for vertex buffer object
     std::vector<Vertex> vertices;
@@ -74,16 +74,18 @@ void Skybox::init()
     textures_faces.push_back(path_skyBox + bottom);
     textures_faces.push_back(path_skyBox + back);
     textures_faces.push_back(path_skyBox + front);
-    std::vector<Texture> textures_loaded = LoadSkyBoxTextures(textures_faces);
+    std::vector<Texture> textures_loaded = LoadTextures(textures_faces);
 
-    m_skyBox= new Mesh(vertices, indices, textures_loaded);
+    m_sky = std::make_unique<Mesh>(vertices, indices, textures_loaded);
 }
+
 void Skybox::Render(Shader& shader_skyBox)
 {
     shader_skyBox.activate();
-    m_skyBox->Render(shader_skyBox);
+    m_sky->Render(shader_skyBox);
 }
-std::vector<Texture> LoadSkyBoxTextures(std::vector<std::string> textures_faces)
+
+std::vector<Texture> Skybox::LoadTextures(std::vector<std::string> textures_faces)
 {
     std::vector<Texture> textures_loaded;
     unsigned int textureID;

@@ -1,22 +1,25 @@
 #pragma once
 
-#include"PhysicsEngine/PhysicsObject.h"
-#include"model.h"
-#include "boundingBox.h"
+#include"../PhysicsEngine/PhysicsObject.h"
+#include"../model.h"
+#include "../boundingBox.h"
 
-class Shader;
+inline std::string terrain_path = "source/resources/terrain/";
+inline 	std::string heightMapFile = terrain_path + "/heightmap_paris.png";
 
-//static std::string path_terrain_texture = "source/resources/terrain/";
-static std::string heightMapFile = "source/resources/terrain/heightmap_paris.png"; 
-static std::string path_terrain_texture = "source/resources/RuggedTerrain/";
-//static std::string heightMapFile = "source/resources/RuggedTerrain/HeightMap.png";
 extern unsigned int nbrPatchesTess ;
+
+enum class TypeRealTerrain
+{
+	Raw=0,
+	Tess=1
+};
 
 
 class Terrain:public PhysicsObject
 {
 public:
-	Terrain(glm::vec3 scale= glm::vec3(1.0f,1.0f,1.0f));
+	Terrain(TypeRealTerrain typeTerrain=TypeRealTerrain::Raw, glm::vec3 scale=glm::vec3(1.0f));
 
 	virtual ~Terrain();
 
@@ -33,7 +36,8 @@ public:
 
 	//Tesselation
 	void InitTerrainTesselation();
-	std::vector<Vertex> InitVerticesTessWithHeightMapTexture(const char* heightMapFilePath, unsigned int& width, unsigned int& height);
+	std::vector<Vertex> InitVerticesTessWithHeightMapTexture(const char* heightMapFilePath, 
+															 unsigned int& width, unsigned int& height);
 
 	Texture LoadTerrainTextures(std::string name_texture, std::string pathFile_texture);
 
@@ -41,7 +45,6 @@ public:
 	float GetHeightInterpolated(float x, float z);
 	
 	glm::vec3 ConstrainCameraPosToTerrain(glm::vec3 camPos);
-
 
 	void CalculateNormals(std::vector<Vertex>& Vertices, std::vector<unsigned int>& Indices);
 
@@ -62,9 +65,11 @@ public:
 	};
 
 	inline const std::vector<float>& getHeightMap() { return m_heightMap; }
-
+	
+	TypeRealTerrain m_typeRealTerrain = TypeRealTerrain::Raw;
 
 private:
+
 	glm::vec3 m_scale = glm::vec3(1.0f);
 
 	unsigned int m_width = 0; //x-axis

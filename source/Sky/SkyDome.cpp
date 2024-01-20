@@ -1,31 +1,28 @@
 #include"SkyDome.h"
-#include <glm/glm.hpp>
-#include"stb_image.h"
-#include"model.h"
+#include"..\stb_image.h"
+#include"..\model.h"
 
-#define M_PI 3.14159265358979323846
+
+void SkyDome::Render(Shader& shader)
+{
+    shader.activate();
+    m_sky->RenderSkyDome(shader);
+}
 
 void SkyDome::InitSkyDome(unsigned int nbr_rows, unsigned int nbr_cols, float radius)
 {
     // Init vertices
-    std::vector<Vertex> vertices = InitVertices(nbr_rows,nbr_cols, radius);
+    std::vector<Vertex> vertices = InitVertices(nbr_rows, nbr_cols, radius);
     // Init textures
-    std::vector<Texture> textures_loaded= LoadSkyDomeTextures(path_SkyDome + "skydome.jpg");
+    std::vector<Texture> textures_loaded = LoadTextures(std::vector<std::string>({ path_SkyDome + "skydome.jpg" }));
 
-    m_skyDome = new Mesh(vertices, textures_loaded);
+    m_sky = std::make_unique<Mesh>(vertices, textures_loaded);
 }
-void SkyDome::Render(Shader& shader)
-{
-    shader.activate();
-    m_skyDome->RenderSkyDome(shader);
-}
-
-
 std::vector<Vertex> SkyDome::InitVertices(int NumRows, int NumCols, float Radius)
 {
     int NumVerticesTopStrip = 3 * NumCols;
     int NumVerticesRegularStrip = 6 * NumCols;
-    m_numVertices = NumVerticesTopStrip + (NumRows - 1) * NumVerticesRegularStrip;
+ //   m_numVertices = NumVerticesTopStrip + (NumRows - 1) * NumVerticesRegularStrip;
 
  //   std::vector<Vertex> Vertices(m_numVertices);
     std::vector<Vertex> Vertices;
@@ -73,8 +70,8 @@ Vertex SkyDome::CreateVertex(const glm::vec3& position)
 {
     Vertex vertex;
     glm::vec3 normalizedPos = glm::normalize(position);
-    float u = 0.5f + atan2(normalizedPos.z, normalizedPos.x) / (2.0f * M_PI);
-    float v = 0.5f - asin(normalizedPos.y) / (2.0f * M_PI);
+    float u = 0.5f + atan2(normalizedPos.z, normalizedPos.x) / (2.0f * glm::pi<float>());
+    float v = 0.5f - asin(normalizedPos.y) / (2.0f * glm::pi<float>());
 
     vertex.Position = position;
     vertex.Normal = normalizedPos;
@@ -120,7 +117,7 @@ std::vector<unsigned int> SkyDome::InitIndices(int NumRows, int NumCols)
     return indices;
 }
 
-std::vector<Texture> LoadSkyDomeTextures(std::string textures_skydome) 
+std::vector<Texture> SkyDome::LoadTextures(std::vector<std::string> textures_skydome)
 {
     std::vector<Texture> textures_loaded;
     unsigned int textureID;
@@ -128,7 +125,7 @@ std::vector<Texture> LoadSkyDomeTextures(std::string textures_skydome)
     glBindTexture(GL_TEXTURE_2D, textureID);
     // Load the skydome texture
     int width, height, nrChannels;
-    unsigned char* data = stbi_load(textures_skydome.c_str(), &width, &height, &nrChannels, 0);
+    unsigned char* data = stbi_load(textures_skydome[0].c_str(), &width, &height, &nrChannels, 0);
     if (data)
     {
         GLenum format;
@@ -157,12 +154,12 @@ std::vector<Texture> LoadSkyDomeTextures(std::string textures_skydome)
     }
     else
     {
-        std::cout << "STBI failed to load skydome texture: " << textures_skydome << std::endl;
+        std::cout << "STBI failed to load skydome texture: " << textures_skydome[0] << std::endl;
         glDeleteTextures(1, &textureID);
         stbi_image_free(data);
     }
     
-    textures_loaded.push_back(Texture(textureID, "skydome", textures_skydome));
+    textures_loaded.push_back(Texture(textureID, "skydome", textures_skydome[0]));
  
     return textures_loaded;
 }

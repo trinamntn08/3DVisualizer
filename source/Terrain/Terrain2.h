@@ -1,9 +1,8 @@
 #pragma once
 #include <glm/glm.hpp>
 #include<vector>
-#include"Camera.h"
-#include"model.h"
-
+#include"../Camera.h"
+#include"../model.h"
 
 
 struct TerrainParameters 

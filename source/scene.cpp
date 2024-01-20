@@ -1,14 +1,23 @@
 #include"Scene.h"
+
+#include <glm/gtx/projection.hpp>
+#include <glm/gtx/perpendicular.hpp>
+
+#include <imgui.h>
+#include <imgui_impl_opengl3.h>
+#include <imgui_impl_glfw.h>
+
 #include"traceRay.h"
 #include"PhysicsEngine/RigidBody.h"
 #include"PhysicsEngine/Sphere.h"
 #include"PhysicsEngine/Plane.h"
 #include"PhysicsEngine/Box.h"
+
+#include"Sky/SkyBox.h"
+#include"Sky/SkyDome.h"
+
 #include"Timer.h"
 #include"Logger.h"
-
-#include <glm/gtx/projection.hpp>
-#include <glm/gtx/perpendicular.hpp>
 
 
 typedef bool(*fn)(PhysicsObject*, PhysicsObject*);
@@ -46,19 +55,60 @@ void Scene::loadScene()
 	
 	m_plane = std::make_unique <PlaneModel>();
 	
-	if (m_typeSky == Sky::SkyBox)
-	{
-		m_skyBox = std::make_unique<Skybox>();
-	}
-	else if (m_typeSky == Sky::SkyDome)
-	{
-		m_skyDome = std::make_unique<SkyDome>();
-	}
+	UpdateSky(m_typeSky);
 
-//	m_terrain = std::make_unique<Terrain>();
+	m_terrain = std::make_unique<Terrain>(TypeRealTerrain::Raw);
 
-	m_terrain2 = std::make_unique<Terrain2>();
+//	m_terrain2 = std::make_unique<Terrain2>();
 	
+}
+void Scene::SetGui()
+{
+	SetEnvGui();
+//	m_terrain2->SetGui();
+}
+void Scene::SetEnvGui()
+{
+	ImGui::Begin("Environment");
+
+	static const char* skyItems[] = { "SkyBox", "SkyDome" };
+	Sky previousType = m_typeSky;
+	ImGui::Combo("Sky", reinterpret_cast<int*>(&m_typeSky), skyItems, IM_ARRAYSIZE(skyItems));
+
+	static const char* terrainItems[] = { "Raw", "Tesselation" };
+	TypeRealTerrain previousTerrainType = m_terrain->m_typeRealTerrain;
+	ImGui::Combo("Terrain", reinterpret_cast<int*>(&m_terrain->m_typeRealTerrain), terrainItems, IM_ARRAYSIZE(terrainItems));
+	
+	ImGui::End();
+
+	if (m_typeSky != previousType)
+	{
+		UpdateSky(m_typeSky);
+	}
+
+	if (m_terrain->m_typeRealTerrain != previousTerrainType)
+	{
+		UpdateTerrain(m_terrain->m_typeRealTerrain);
+	}
+}
+void Scene::UpdateSky(Sky& skyType)
+{
+	// Release the current object before creating a new one
+	m_sky.reset();
+	if (skyType == Sky::SkyBox)
+	{
+		m_sky = std::make_unique<Skybox>();
+	}
+	else if (skyType == Sky::SkyDome)
+	{
+		m_sky = std::make_unique<SkyDome>();
+	}
+}
+void Scene::UpdateTerrain(TypeRealTerrain terrainType)
+{
+	// Release the current object before creating a new one
+	m_terrain.reset();
+	m_terrain = std::make_unique<Terrain>(terrainType);
 }
 void  Scene::ResetScene()
 {
@@ -232,7 +282,6 @@ void Scene::Render(ShadersManager& shadersManager, const std::unique_ptr<Camera>
 	/*RenderPhysicsObjects(shadersManager.objects,camera);
 	RenderPlane(shadersManager.plane, camera);*/
 
-
 	if (m_typeSky == Sky::SkyBox)
 	{
 		RenderSkyBox(shadersManager.skyBox, camera);
@@ -242,8 +291,16 @@ void Scene::Render(ShadersManager& shadersManager, const std::unique_ptr<Camera>
 		RenderSkyDome(shadersManager.skyDome, camera);
 	}
 
-//	RenderTerrainTesselation(shadersManager.terrain, camera);
-	RenderTerrain2(shadersManager.terrain, camera);
+	if (m_terrain->m_typeRealTerrain == TypeRealTerrain::Raw)
+	{
+		RenderTerrain(shadersManager.rawTerrain, camera);
+	}
+	else if (m_terrain->m_typeRealTerrain == TypeRealTerrain::Tess)
+	{
+		RenderTerrain(shadersManager.tessTerrain, camera);
+	}
+
+	//	RenderTerrain2(shadersManager.terrain, camera);
 }
 void Scene::RenderPhysicsObjects(Shader& shader,const std::unique_ptr<Camera>& camera, bool isRender_BBoxes)
 {
@@ -335,7 +392,7 @@ void Scene::RenderSkyBox(Shader& shader_skybox, const std::unique_ptr<Camera>& c
 	glm::mat4 view_skyBox = camera->GetViewMatrix();
 	glm::mat4 projection_skyBox = camera->GetProjectionMatrix();
 	shader_skybox.setMat_MVP(model_skyBox, view_skyBox, projection_skyBox);
-	m_skyBox->Render(shader_skybox);
+	m_sky->Render(shader_skybox);
 	glDisable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 	// Restore the original depth function
 	glDepthFunc(originalDepthFunc);
@@ -359,7 +416,7 @@ void Scene::RenderSkyDome(Shader& shader_skydome, const std::unique_ptr<Camera>&
 	glm::mat4 projection_skyDome = camera->GetProjectionMatrix();
 	shader_skydome.setMat_MVP(model_skyDome, view_skyDome, projection_skyDome);
 
-	m_skyDome->Render(shader_skydome);
+	m_sky->Render(shader_skydome);
 
 	// Restore the original depth function
 	glDepthFunc(originalDepthFunc);
@@ -373,6 +430,10 @@ void Scene::RenderSkyDome(Shader& shader_skydome, const std::unique_ptr<Camera>&
 void Scene::RenderTerrain(Shader& shader_terrain, const std::unique_ptr<Camera>& camera)
 {
 	shader_terrain.activate();
+	glm::mat4 model = glm::mat4(1.0f);
+	glm::mat4 view = camera->GetViewMatrix();
+	glm::mat4 projection = camera->GetProjectionMatrix();
+	shader_terrain.setMat_MVP(model, view, projection);
 	m_terrain->Render(shader_terrain);
 	// Check for OpenGL errors
 	if (glGetError() != GL_NO_ERROR)
@@ -396,7 +457,7 @@ void Scene::RenderTerrain2(Shader& shader_terrain2, const std::unique_ptr<Camera
 
 	}
 }
-
+/*
 void Scene::RenderTerrainTesselation(Shader& shader_terrain, const std::unique_ptr<Camera>& camera)
 {
 	shader_terrain.activate();
@@ -426,7 +487,7 @@ void Scene::RenderTerrainTesselation(Shader& shader_terrain, const std::unique_p
 	////     glm::vec3 ReversedLightDir = -glm::vec3(0.0f, 1.0f, 0.0f);
 	//m_shader_terrain.setVec3("gReversedLightDir", 0.0f, ReversedLightDir.y, ReversedLightDir.z );
 
-	m_terrain->RenderTesselation(shader_terrain);
+	m_terrain->Render(shader_terrain);
 	// Check for OpenGL errors
 	if (glGetError() != GL_NO_ERROR)
 	{
@@ -434,6 +495,7 @@ void Scene::RenderTerrainTesselation(Shader& shader_terrain, const std::unique_p
 
 	}
 }
+*/
 /*********************************************************************************************************
 *                     COLLISIONS
 **********************************************************************************************************/

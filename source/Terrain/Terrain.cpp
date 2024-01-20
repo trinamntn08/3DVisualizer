@@ -1,17 +1,24 @@
 #include "Terrain.h"
-#include"stb_image.h"
-#include"Logger.h"
-#include"PhysicsEngine/RigidBody.h"
-#include"Logger.h"
-#include"Timer.h"
+#include"../stb_image.h"
+#include"../Logger.h"
+#include"../PhysicsEngine/RigidBody.h"
+#include"../Logger.h"
+#include"../Timer.h"
 
 unsigned int nbrPatchesTess = 20;
 
-Terrain::Terrain(glm::vec3 scale):m_scale(scale)
+Terrain::Terrain(TypeRealTerrain typeTerrain,glm::vec3 scale):m_typeRealTerrain(typeTerrain), m_scale(scale)
 { 
 	m_rigidbody = new RigidBody();
-	//InitTerrainTesselation();
-	InitTerrain();
+
+	if (m_typeRealTerrain == TypeRealTerrain::Raw)
+	{
+		InitTerrain();
+	}
+	else
+	{
+		InitTerrainTesselation();
+	}
 	ComputeBoundingBox();
 }
 
@@ -28,19 +35,22 @@ void Terrain::UpdatePhysics(glm::vec3 gravity, float timeStep)
 void Terrain::Render(Shader& shader)
 {
 	shader.activate();
-	m_terrain->Render(shader);
+
+	if (m_typeRealTerrain == TypeRealTerrain::Raw)
+	{
+		m_terrain->Render(shader);
+	}
+	else
+	{
+		m_terrain->RenderTesselation(shader); 
+	}
 }
 
-void Terrain::RenderTesselation(Shader& shader)
-{
-	shader.activate();
-	m_terrain->RenderTesselation(shader);
-}
 
 void Terrain::InitTerrain()
 {
 	// Initialize vertices
-	 std::vector<Vertex> vertices = InitVerticesWithHeightMapFromFile(heightMapFile.c_str(), m_width, m_depth);
+	std::vector<Vertex> vertices = InitVerticesWithHeightMapFromFile(heightMapFile.c_str(), m_width, m_depth);
 
 	// Initialize indices for triangles 
 	unsigned int num_indices = (m_width - 1) * (m_depth - 1) * 6;
@@ -84,52 +94,31 @@ void Terrain::InitTerrain()
 	// textures
 	std::vector<Texture> textures_terrain;
 	
-	//Texture sand = LoadTerrainTextures("gTextureHeight0", path_terrain_texture + "rdiffuse.jpg");
-	//Texture grass = LoadTerrainTextures("gTextureHeight1", path_terrain_texture + "sand.jpg");
-	//Texture rdiffuse = LoadTerrainTextures("gTextureHeight2", path_terrain_texture + "snow.jpg");
-	//Texture snow = LoadTerrainTextures("gTextureHeight3", path_terrain_texture + "terrainTexture.jpg");
-
-	Texture sand = LoadTerrainTextures("gTextureHeight0", path_terrain_texture + "RuggedTerrain.png");
-	Texture grass = LoadTerrainTextures("gTextureHeight1", path_terrain_texture + "RuggedTerrain.png");
-	Texture rdiffuse = LoadTerrainTextures("gTextureHeight2", path_terrain_texture + "RuggedTerrain.png");
-	Texture snow = LoadTerrainTextures("gTextureHeight3", path_terrain_texture + "RuggedTerrain.png");
+	Texture sand = LoadTerrainTextures("gTextureHeight0", terrain_path + "rdiffuse.jpg");
+	Texture grass = LoadTerrainTextures("gTextureHeight1", terrain_path + "sand.jpg");
+	Texture rdiffuse = LoadTerrainTextures("gTextureHeight2", terrain_path + "snow.jpg");
+	Texture snow = LoadTerrainTextures("gTextureHeight3", terrain_path + "terrainTexture.jpg");
 
 	textures_terrain.push_back(sand);
 	textures_terrain.push_back(grass);
 	textures_terrain.push_back(rdiffuse);
 	textures_terrain.push_back(snow);
-	//textures_terrain.push_back(rnormal);
-	//textures_terrain.push_back(terrainTexture);
-//	textures_terrain.push_back(SamplerTerrain);
-
 	
 	m_terrain = std::make_unique<Mesh>(vertices, indices, textures_terrain);
 }
 void Terrain::InitTerrainTesselation()
 {
 	// Initialize vertices
-	std::vector<Vertex> vertices = InitVerticesTessWithHeightMapTexture("source/resources/RockyLandRivers/Heightmap.png", m_width, m_depth);
+	std::vector<Vertex> vertices = InitVerticesTessWithHeightMapTexture("source/resources/terrain/heightmap_paris.png", m_width, m_depth);
 
 	// textures
 	std::vector<Texture> textures_terrain;
-/*
-	Texture sand = LoadTerrainTextures("gTextureHeight0", path_terrain_texture + "rdiffuse.jpg");
-	Texture grass = LoadTerrainTextures("gTextureHeight1", path_terrain_texture + "sand.jpg");
-	Texture rdiffuse = LoadTerrainTextures("gTextureHeight2", path_terrain_texture + "snow.jpg");
-	Texture snow = LoadTerrainTextures("gTextureHeight3", path_terrain_texture + "terrainTexture.jpg");
-	Texture heightMap = LoadTerrainTextures("heightMap", path_terrain_texture+ "heightmap_paris.png");
-	textures_terrain.push_back(sand);
-	textures_terrain.push_back(grass);
-	textures_terrain.push_back(rdiffuse);
-	textures_terrain.push_back(snow);
-	textures_terrain.push_back(heightMap);
-*/
 
-	Texture sand = LoadTerrainTextures("gTextureHeight0", path_terrain_texture + "RuggedTerrain.png");
-	Texture grass = LoadTerrainTextures("gTextureHeight1", path_terrain_texture + "RuggedTerrain.png");
-	Texture rdiffuse = LoadTerrainTextures("gTextureHeight2", path_terrain_texture + "RuggedTerrain.png");
-	Texture snow = LoadTerrainTextures("gTextureHeight3", path_terrain_texture + "RuggedTerrain.png");
-	Texture heightMap = LoadTerrainTextures("heightMap", "source/resources/RockyLandRivers/HeightMap.png");
+	Texture sand = LoadTerrainTextures("gTextureHeight0", terrain_path + "rdiffuse.jpg");
+	Texture grass = LoadTerrainTextures("gTextureHeight1", terrain_path + "sand.jpg");
+	Texture rdiffuse = LoadTerrainTextures("gTextureHeight2", terrain_path + "snow.jpg");
+	Texture snow = LoadTerrainTextures("gTextureHeight3", terrain_path + "terrainTexture.jpg");
+	Texture heightMap = LoadTerrainTextures("heightMap", terrain_path + "heightmap_paris.png");
 	textures_terrain.push_back(sand);
 	textures_terrain.push_back(grass);
 	textures_terrain.push_back(rdiffuse);

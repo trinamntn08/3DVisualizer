@@ -103,15 +103,17 @@ void Application::InitShader()
     Shader shader_objects   = Shader("source/shaders/core_vertex.glsl", "source/shaders/core_fragment.glsl");
     Shader shader_skyBox  = Shader("source/shaders/sky/skybox_vertex.glsl", "source/shaders/sky/skybox_fragment.glsl");
     Shader shader_skyDome = Shader("source/shaders/sky/skydome_vertex.glsl", "source/shaders/sky/skydome_fragment.glsl");
- //   Shader shader_terrain = Shader("source/shaders/gpuheight.vs", "source/shaders/gpuheight.glsl", nullptr,
-  //                                 "source/shaders/gpuheight.tcs", "source/shaders/gpuheight.tes");    
- //   Shader shader_terrain = Shader("source/shaders/terrain_vertex.glsl", "source/shaders/terrain_fragment.glsl");
+    
+    Shader shader_rawTerrain = Shader("source/shaders/terrain_vertex.glsl", "source/shaders/terrain_fragment.glsl");
+    Shader shader_tessTerrain = Shader("source/shaders/gpuheight.vs", "source/shaders/gpuheight.glsl", nullptr,
+                                   "source/shaders/gpuheight.tcs", "source/shaders/gpuheight.tes");    
 
-    Shader shader_terrain = Shader("source/shaders/terrain/terrain.vert", 
+    Shader shader_simulTerrain = Shader("source/shaders/terrain/terrain.vert", 
                                     "source/shaders/terrain/terrain.frag",
                                     nullptr,
                                     "source/shaders/terrain/terrain.tcs",
                                     "source/shaders/terrain/terrain.tes");
+
     Shader shader_plane = Shader("source/shaders/adv_lighting_vertex.glsl", 
                                     "source/shaders/adv_lighting_fragment.glsl");
 
@@ -119,7 +121,9 @@ void Application::InitShader()
     m_shadersManager.setObjectsShader(shader_objects);
     m_shadersManager.setSkyBoxShader(shader_skyBox);
     m_shadersManager.setSkyDomeShader(shader_skyDome);
-    m_shadersManager.setTerrainShader(shader_terrain);
+    m_shadersManager.setRawTerrainShader(shader_rawTerrain);
+    m_shadersManager.setTessTerrainShader(shader_tessTerrain);
+    m_shadersManager.setSimulTerrainShader(shader_simulTerrain);
 }
 
 void Application::ConfigCamera()
@@ -145,7 +149,7 @@ void Application::Run()
     m_scene =std::make_unique<Scene>(Sky::SkyDome);
     ConfigCamera();
     
-    /*
+    /* FOR HEIGHT FRAMEBUFFER 
     unsigned int width = m_scene->getTerrain()->getWidth();
     unsigned int height = m_scene->getTerrain()->getDepth();
 
@@ -191,7 +195,7 @@ void Application::Run()
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-        m_scene->getTerrain2()->SetGui();
+        m_scene->SetGui();
 
         // per-frame time logic
         float currentFrame = (float)glfwGetTime();

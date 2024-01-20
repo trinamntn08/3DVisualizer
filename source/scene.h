@@ -1,18 +1,19 @@
 #pragma once
 
+#include<memory>
+
 #include"Camera.h"
 
 #include"PhysicsEngine/Box.h"
 #include"PhysicsEngine/Plane.h"
 
-#include"SkyBox.h"
-#include"Terrain.h"
-#include"SkyDome.h"
-#include"Terrain2.h"
+#include"Terrain/Terrain.h"
+#include"Terrain/Terrain2.h"
+
+#include"Sky/AbstractSky.h"
 
 #include"ShadersManager.h"
 
-#include<memory>
 
 const std::string cubePath = std::string("source/resources/cube/cube.gltf");
 const std::string spiderPath = std::string("source/resources/spider/spider.obj");
@@ -65,8 +66,16 @@ public:
     void RenderPlane(Shader& shader_plane,const std::unique_ptr<Camera>& camera);
     void RenderTerrain(Shader& shader_terrain, const std::unique_ptr<Camera>& camera);
     void RenderTerrain2(Shader& shader_terrain2, const std::unique_ptr<Camera>& camera);
-    void RenderTerrainTesselation(Shader& shader_terrain, const std::unique_ptr<Camera>& camera);
+//    void RenderTerrainTesselation(Shader& shader_terrain, const std::unique_ptr<Camera>& camera);
 
+    void SetGui();
+
+    void SetEnvGui();
+
+    void UpdateSky(Sky& skyType);
+
+    // Dont use reference for parameter here
+    void UpdateTerrain(TypeRealTerrain terrainType);
 
     void ResetScene();
     void ClearScene();
@@ -74,8 +83,7 @@ public:
 
     inline std::unique_ptr <Terrain>& getTerrain() { return m_terrain; };
     inline std::unique_ptr <Terrain2>& getTerrain2() { return m_terrain2; };
-    inline std::unique_ptr <SkyDome>& getSkyDome() { return m_skyDome; };
-    inline std::unique_ptr <Skybox>& getSkyBox() { return m_skyBox; };
+    inline std::unique_ptr <AbstractSky>& getSky() { return m_sky; };
     inline std::unique_ptr <PlaneModel>& getPlane() { return m_plane; }
 
     /**************     COLLISIONS  ****************/
@@ -99,13 +107,14 @@ public:
 
 
 private:
-    Sky m_typeSky = Sky::SkyDome;
+    Sky m_typeSky = Sky::SkyBox;
 
-    std::unique_ptr<Skybox> m_skyBox=nullptr;
-    std::unique_ptr<SkyDome> m_skyDome = nullptr;
+    std::unique_ptr<AbstractSky> m_sky = nullptr;
+
     std::unique_ptr<Terrain> m_terrain = nullptr;
-    std::unique_ptr <PlaneModel> m_plane = nullptr;
     std::unique_ptr<Terrain2> m_terrain2 = nullptr;
+
+    std::unique_ptr <PlaneModel> m_plane = nullptr;
 
     std::vector<PhysicsObject*> m_allPhysicsObjects;
     std::vector<BoxModel*> m_cubes;
